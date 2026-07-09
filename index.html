@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patcher</title>
+    <style>
+        /* CRITICAL ARCHITECTURE: CSS Variables Skeleton */
+        :root {
+            --bg-main: #f4f5f7;
+            --bg-panel: #ffffff;
+            --text-main: #1a1a1a;
+            --text-muted: #6b7280;
+            --border-color: #d1d5db;
+            --border-hover: #9ca3af;
+            --accent-color: #2563eb;
+            --accent-hover: #1d4ed8;
+            --success-color: #16a34a;
+            --warning-color: #ea580c; /* Dark orange/red for error visibility */
+            --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            --radius: 8px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: var(--text-main);
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
+            flex-grow: 1;
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Upload Zone */
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius);
+            padding: 3rem 2rem;
+            text-align: center;
+            background-color: var(--bg-panel);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow);
+            font-weight: 500;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent-color);
+            background-color: var(--bg-main);
+        }
+
+        .file-info {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-align: center;
+            font-weight: 600;
+            min-height: 1.2rem;
+        }
+
+        /* Text Area */
+        textarea {
+            width: 100%;
+            flex-grow: 1;
+            min-height: 300px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background-color: var(--bg-panel);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            resize: vertical;
+            box-shadow: var(--shadow);
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        /* Buttons */
+        button, .download-btn {
+            padding: 1rem;
+            border: none;
+            border-radius: var(--radius);
+            background-color: var(--accent-color);
+            color: #ffffff; /* Explicitly white text for standard button */
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+            box-shadow: var(--shadow);
+            width: 100%;
+        }
+
+        button:hover:not(:disabled), .download-btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button:disabled {
+            background-color: var(--border-color);
+            cursor: not-allowed;
+            color: var(--text-muted);
+            box-shadow: none;
+        }
+
+        /* Console Log */
+        .console-log {
+            flex-grow: 1;
+            min-height: 300px;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1rem;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .log-entry {
+            margin: 0;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .log-success { color: var(--success-color); }
+        .log-warning { color: var(--warning-color); font-weight: 600; }
+        .log-info { color: var(--text-muted); }
+
+        /* Responsive Layout */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.1</span></h1>
+    </header>
+
+    <main class="container">
+        <!-- Left Column: Inputs -->
+        <div class="col">
+            <div id="drop-zone" class="drop-zone">
+                <span>Drop your source file here, or click to browse (.html, .js, .css, .txt)</span>
+                <input type="file" id="file-input" accept=".html,.js,.css,.txt" hidden>
+            </div>
+            <div class="file-info" id="file-info"></div>
+            
+            <textarea id="instructions-input" placeholder="Paste AI instructions here (Look for Find/Replace blocks)"></textarea>
+            
+            <button id="apply-btn" disabled>Apply Patches</button>
+        </div>
+
+        <!-- Right Column: Output -->
+        <div class="col">
+            <div id="console-log" class="console-log">
+                <div class="log-entry log-info">Awaiting source file and instructions...</div>
+            </div>
+            
+            <a id="download-btn" class="download-btn" style="display: none;">Download Patched File</a>
+        </div>
+    </main>
+
+    <script>
+        // --- DOM Elements ---
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const instructionsInput = document.getElementById('instructions-input');
+        const applyBtn = document.getElementById('apply-btn');
+        const consoleLog = document.getElementById('console-log');
+        const downloadBtn = document.getElementById('download-btn');
+
+        // --- State Management ---
+        let sourceFileContent = "";
+        let originalFileName = "";
+        let originalFileExtension = "";
+
+        // --- UI Console Logger ---
+        function logToConsole(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = message;
+            consoleLog.appendChild(entry);
+            // Auto-scroll to bottom
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+
+        function clearConsole() {
+            consoleLog.innerHTML = '';
+        }
+
+        // --- File Ingestion ---
+        function handleFile(file) {
+            if (!file) return;
+            
+            originalFileName = file.name;
+            const parts = originalFileName.split('.');
+            originalFileExtension = parts.length > 1 ? parts.pop() : '';
+            
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                sourceFileContent = e.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                fileInfo.textContent = `Loaded: ${originalFileName}`;
+                applyBtn.disabled = false;
+                downloadBtn.style.display = 'none'; // Reset download button on new file
+                clearConsole();
+                logToConsole(`File '${originalFileName}' loaded into memory. Ready to patch.`, 'info');
+            };
+            
+            reader.onerror = () => {
+                clearConsole();
+                logToConsole("Error reading source file.", 'warning');
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // Event Listeners for File Selection
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        // Event Listeners for Drag & Drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        // --- Core Engine Logic ---
+        applyBtn.addEventListener('click', () => {
+            if (!sourceFileContent) {
+                logToConsole("Error: No source file loaded.", 'warning');
+                return;
+            }
+
+            const instructions = instructionsInput.value.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            if (!instructions.trim()) {
+                logToConsole("Error: No AI instructions provided.", 'warning');
+                return;
+            }
+
+            clearConsole();
+            logToConsole("Initializing Regex Parser...", 'info');
+
+            // REGEX EXPLANATION:
+            // Matches ``` followed optionally by characters (like 'javascript') and a newline.
+            // Captures everything ([\s\S]*?) until it hits the next ```.
+            // This strictly ignores all conversational fluff outside the blocks.
+            const regex = /```[^\n]*\n([\s\S]*?)```/g;
+            const blocks = [];
+            let match;
+            
+            while ((match = regex.exec(instructions)) !== null) {
+                // To ensure strict matching, we trim any trailing newline that might be left right before the closing backticks
+                // if it wasn't part of the original code snippet context.
+                let blockContent = match[1];
+                if (blockContent.endsWith('\n')) {
+                    blockContent = blockContent.slice(0, -1);
+                }
+                if (blockContent.endsWith('\r')) {
+                    blockContent = blockContent.slice(0, -1);
+                }
+                blocks.push(blockContent);
+            }
+
+            if (blocks.length === 0) {
+                logToConsole("No code blocks found. Ensure instructions use standard ``` backticks.", 'warning');
+                return;
+            }
+
+            if (blocks.length % 2 !== 0) {
+                logToConsole("Notice: Uneven number of code blocks found. The final orphaned block will be ignored.", 'info');
+            }
+
+            let patchedContent = sourceFileContent;
+            let patchCount = 0;
+            let successCount = 0;
+
+            logToConsole(`Found ${Math.floor(blocks.length / 2)} Find/Replace pair(s). Starting strict literal patching...`, 'info');
+
+            // Iterate through blocks in pairs (Find / Replace)
+            for (let i = 0; i < blocks.length - 1; i += 2) {
+                const findString = blocks[i];
+                const replaceString = blocks[i + 1];
+                patchCount++;
+
+                // DUMB BUT PERFECT: Exact literal matching only. No fuzzy logic.
+                if (patchedContent.includes(findString)) {
+                    patchedContent = patchedContent.replace(findString, replaceString);
+                    logToConsole(`✅ Patch ${patchCount} applied perfectly.`, 'success');
+                    successCount++;
+                } else {
+                    logToConsole(`⚠️ Skipped Patch ${patchCount}: 'Find' block not located exactly in source file.`, 'warning');
+                }
+            }
+
+            logToConsole(`Process Complete: ${successCount} out of ${patchCount} patches applied successfully.`, 'info');
+
+            // --- Error Handling & Download Generation ---
+            if (successCount > 0) {
+                // Generate the new filename: original_patched.ext
+                const nameWithoutExt = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
+                const newFileName = `${nameWithoutExt}_patched.${originalFileExtension}`;
+                
+                // Create Blob for download
+                const blob = new Blob([patchedContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                
+                // Expose Download Button
+                downloadBtn.href = url;
+                downloadBtn.download = newFileName;
+                downloadBtn.style.display = 'block';
+                downloadBtn.textContent = 'Download Patched File';
+            } else {
+                downloadBtn.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
