@@ -51,68 +51,37 @@
             color: var(--text-main);
         }
 
+        /* Module Layout System */
         .container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 2rem;
             width: 100%;
-            max-width: 1200px;
+            max-width: 1400px;
             flex-grow: 1;
+            align-items: start;
         }
 
-        .col {
+        .module {
             display: flex;
             flex-direction: column;
             gap: 1rem;
+            width: 100%;
         }
 
-        /* Upload Zone */
-        .drop-zone {
-            border: 2px dashed var(--border-color);
-            border-radius: var(--radius);
-            padding: 3rem 2rem;
+        /* Action/Input Area */
+        .action-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
             text-align: center;
-            background-color: var(--bg-panel);
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: var(--shadow);
-            font-weight: 500;
         }
 
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: var(--accent-color);
-            background-color: var(--bg-main);
-        }
-
-        .file-info {
+        .file-info, .status-text {
             font-size: 0.875rem;
             color: var(--text-muted);
-            text-align: center;
             font-weight: 600;
             min-height: 1.2rem;
-        }
-
-        /* Text Area */
-        textarea {
-            width: 100%;
-            flex-grow: 1;
-            min-height: 300px;
-            padding: 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            background-color: var(--bg-panel);
-            color: var(--text-main);
-            font-family: var(--font-mono);
-            font-size: 0.875rem;
-            resize: vertical;
-            box-shadow: var(--shadow);
-            line-height: 1.5;
-        }
-
-        textarea:focus {
-            outline: none;
-            border-color: var(--accent-color);
         }
 
         /* Buttons */
@@ -121,19 +90,23 @@
             border: none;
             border-radius: var(--radius);
             background-color: var(--accent-color);
-            color: #ffffff; /* Explicitly white text for standard button */
-            font-size: 1rem;
+            color: #ffffff;
+            font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
-            transition: background-color 0.2s ease;
+            transition: all 0.2s ease;
             box-shadow: var(--shadow);
             width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         button:hover:not(:disabled), .download-btn:hover {
             background-color: var(--accent-hover);
+            transform: translateY(-1px);
         }
 
         button:disabled {
@@ -141,39 +114,164 @@
             cursor: not-allowed;
             color: var(--text-muted);
             box-shadow: none;
+            transform: none;
         }
 
-        /* Console Log */
-        .console-log {
-            flex-grow: 1;
-            min-height: 300px;
+        .hidden {
+            display: none !important;
+        }
+
+        /* Previews & Iframes */
+        .preview-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
             background-color: var(--bg-panel);
-            border: 1px solid var(--border-color);
+            border: 2px solid var(--border-color);
             border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+        }
+
+        .preview-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: #ffffff;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+        }
+
+        .raw-preview {
             padding: 1rem;
-            overflow-y: auto;
             font-family: var(--font-mono);
-            font-size: 0.875rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: pre-wrap;
+            word-break: break-all;
+            overflow: hidden;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            background: var(--bg-panel);
+        }
+
+        /* Status List */
+        .status-list {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
-            box-shadow: var(--shadow);
+            gap: 0.25rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-align: left;
+            margin-top: 0.5rem;
         }
 
-        .log-entry {
-            margin: 0;
-            line-height: 1.5;
-            word-break: break-word;
+        .text-green { color: var(--success-color); }
+        .text-red { color: var(--warning-color); }
+        .text-gray { color: var(--text-muted); text-align: center; }
+
+        /* Animations & Loaders */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
         }
 
-        .log-success { color: var(--success-color); }
-        .log-warning { color: var(--warning-color); font-weight: 600; }
-        .log-info { color: var(--text-muted); }
+        .skeleton {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #e5e7eb;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
 
-        /* Responsive Layout */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        /* Modal Dialog */
+        dialog {
+            width: 90vw;
+            max-width: 800px;
+            height: 80vh;
+            border: none;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 2rem;
+            background: var(--bg-main);
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 9999;
+        }
+
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+        }
+
+        dialog[open] {
+            display: flex; /* Override default block display */
+        }
+
+        dialog textarea {
+            width: 100%;
+            flex-grow: 1;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            resize: none;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 { margin: 0; font-size: 1.5rem; }
+
+        /* Responsive Layout - Mobile */
         @media (max-width: 768px) {
             .container {
                 grid-template-columns: 1fr;
+                gap: 3rem;
+            }
+            .module {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                align-items: start;
+            }
+            .preview-container {
+                aspect-ratio: auto;
+                height: 200px;
             }
         }
     </style>
@@ -181,200 +279,249 @@
 <body>
 
     <header>
-        <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.1</span></h1>
+        <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.3</span></h1>
     </header>
 
     <main class="container">
-        <!-- Left Column: Inputs -->
-        <div class="col">
-            <div id="drop-zone" class="drop-zone">
-                <span>Drop your source file here, or click to browse (.html, .js, .css, .txt)</span>
+        <!-- Module 1: Input Zone -->
+        <div class="module">
+            <div class="action-area">
+                <button id="upload-btn">Upload file</button>
                 <input type="file" id="file-input" accept=".html,.js,.css,.txt" hidden>
+                <div class="file-info" id="file-info">index.html (awaiting)</div>
             </div>
-            <div class="file-info" id="file-info"></div>
-            
-            <textarea id="instructions-input" placeholder="Paste AI instructions here (Look for Find/Replace blocks)"></textarea>
-            
-            <button id="apply-btn" disabled>Apply Patches</button>
+            <div class="preview-container">
+                <div class="skeleton" id="input-skeleton">Awaiting File...</div>
+                <iframe id="input-preview" class="hidden"></iframe>
+            </div>
         </div>
 
-        <!-- Right Column: Output -->
-        <div class="col">
-            <div id="console-log" class="console-log">
-                <div class="log-entry log-info">Awaiting source file and instructions...</div>
+        <!-- Module 2: Engine Zone -->
+        <div class="module">
+            <div class="action-area">
+                <button id="clipboard-btn">Input LLM markdown<br>from clipboard</button>
+                <div class="status-list" id="status-list">
+                    <div class="text-gray">✔️ no input</div>
+                </div>
             </div>
-            
-            <a id="download-btn" class="download-btn" style="display: none;">Download Patched File</a>
+            <div class="preview-container" id="raw-preview-container" title="Tap to manually edit">
+                <div class="skeleton hidden" id="engine-skeleton"></div>
+                <div class="raw-preview" id="raw-preview">Paste preview will appear here...</div>
+            </div>
+        </div>
+
+        <!-- Module 3: Output Zone -->
+        <div class="module">
+            <div class="action-area">
+                <a id="download-btn" class="download-btn hidden">Download patched file</a>
+            </div>
+            <div class="preview-container">
+                <div class="skeleton" id="output-skeleton">Awaiting Patch...</div>
+                <iframe id="output-preview" class="hidden"></iframe>
+            </div>
         </div>
     </main>
 
+    <!-- Fallback Text Editor Modal -->
+    <dialog id="editor-modal">
+        <div class="modal-header">
+            <h2>Manual Input</h2>
+            <button id="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--text-muted);">Close</button>
+        </div>
+        <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Auto-paste blocked or unavailable. Please paste your LLM markdown below.</p>
+        <textarea id="manual-input" placeholder="Paste AI instructions here..." spellcheck="false" maxlength="5000000"></textarea>
+        <button id="apply-manual-btn">Apply Patches</button>
+    </dialog>
+
     <script>
         // --- DOM Elements ---
-        const dropZone = document.getElementById('drop-zone');
+        const uploadBtn = document.getElementById('upload-btn');
         const fileInput = document.getElementById('file-input');
         const fileInfo = document.getElementById('file-info');
-        const instructionsInput = document.getElementById('instructions-input');
-        const applyBtn = document.getElementById('apply-btn');
-        const consoleLog = document.getElementById('console-log');
+        
+        const inputSkeleton = document.getElementById('input-skeleton');
+        const inputPreview = document.getElementById('input-preview');
+        
+        const clipboardBtn = document.getElementById('clipboard-btn');
+        const statusList = document.getElementById('status-list');
+        const rawPreviewContainer = document.getElementById('raw-preview-container');
+        const rawPreview = document.getElementById('raw-preview');
+        
+        const outputSkeleton = document.getElementById('output-skeleton');
+        const outputPreview = document.getElementById('output-preview');
         const downloadBtn = document.getElementById('download-btn');
+
+        const editorModal = document.getElementById('editor-modal');
+        const manualInput = document.getElementById('manual-input');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const applyManualBtn = document.getElementById('apply-manual-btn');
 
         // --- State Management ---
         let sourceFileContent = "";
         let originalFileName = "";
         let originalFileExtension = "";
-
-        // --- UI Console Logger ---
-        function logToConsole(message, type = 'info') {
-            const entry = document.createElement('div');
-            entry.className = `log-entry log-${type}`;
-            entry.textContent = message;
-            consoleLog.appendChild(entry);
-            // Auto-scroll to bottom
-            consoleLog.scrollTop = consoleLog.scrollHeight;
-        }
-
-        function clearConsole() {
-            consoleLog.innerHTML = '';
-        }
+        let isProcessing = false;
 
         // --- File Ingestion ---
-        function handleFile(file) {
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
             if (!file) return;
             
             originalFileName = file.name;
             const parts = originalFileName.split('.');
             originalFileExtension = parts.length > 1 ? parts.pop() : '';
             
-            const reader = new FileReader();
+            uploadBtn.textContent = "Upload different file";
+            fileInfo.textContent = originalFileName;
             
+            // Show loading state
+            inputPreview.classList.add('hidden');
+            inputSkeleton.textContent = "Loading...";
+            inputSkeleton.classList.remove('hidden');
+
+            const reader = new FileReader();
             reader.onload = (e) => {
                 sourceFileContent = e.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-                fileInfo.textContent = `Loaded: ${originalFileName}`;
-                applyBtn.disabled = false;
-                downloadBtn.style.display = 'none'; // Reset download button on new file
-                clearConsole();
-                logToConsole(`File '${originalFileName}' loaded into memory. Ready to patch.`, 'info');
+                
+                // Render iframe preview with a slight artificial delay for smoothness
+                setTimeout(() => {
+                    inputPreview.srcdoc = sourceFileContent;
+                    inputPreview.classList.remove('hidden');
+                    inputSkeleton.classList.add('hidden');
+                }, 300);
+
+                // Reset outputs
+                downloadBtn.classList.add('hidden');
+                outputPreview.classList.add('hidden');
+                outputSkeleton.textContent = "Awaiting Patch...";
+                outputSkeleton.classList.remove('hidden');
+                statusList.innerHTML = '<div class="text-gray">✔️ ready for markdown</div>';
+                rawPreview.textContent = "Paste preview will appear here...";
             };
-            
-            reader.onerror = () => {
-                clearConsole();
-                logToConsole("Error reading source file.", 'warning');
-            };
-            
             reader.readAsText(file);
-        }
+        });
 
-        // Event Listeners for File Selection
-        dropZone.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
-
-        // Event Listeners for Drag & Drop
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
+        // --- Modal Flow ---
+        rawPreviewContainer.addEventListener('click', () => {
+            editorModal.showModal();
         });
         
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
+        closeModalBtn.addEventListener('click', () => {
+            editorModal.close();
         });
-        
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length) {
-                handleFile(e.dataTransfer.files[0]);
+
+        applyManualBtn.addEventListener('click', () => {
+            const text = manualInput.value;
+            editorModal.close();
+            if (text.trim()) {
+                processInstructions(text);
+            }
+        });
+
+        // --- Clipboard Flow (Option A) ---
+        clipboardBtn.addEventListener('click', async () => {
+            if (!sourceFileContent) {
+                statusList.innerHTML = '<div class="text-red">❗ Upload a file first</div>';
+                return;
+            }
+            if (isProcessing) return;
+
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text.trim()) {
+                    statusList.innerHTML = '<div class="text-red">❗ Clipboard is empty</div>';
+                    return;
+                }
+                processInstructions(text);
+            } catch (err) {
+                // Fallback if clipboard API blocked
+                statusList.innerHTML = '<div class="text-red">❗ Auto-paste blocked. Tap box below.</div>';
+                editorModal.showModal();
             }
         });
 
         // --- Core Engine Logic ---
-        applyBtn.addEventListener('click', () => {
-            if (!sourceFileContent) {
-                logToConsole("Error: No source file loaded.", 'warning');
-                return;
-            }
+        function processInstructions(instructions) {
+            isProcessing = true;
+            
+            // Update UI to Processing State
+            rawPreview.textContent = instructions.substring(0, 500) + (instructions.length > 500 ? "..." : "");
+            statusList.innerHTML = '<div class="text-gray"><div class="spinner"></div> Reading clipboard...</div>';
+            
+            setTimeout(() => {
+                statusList.innerHTML = '<div class="text-gray"><div class="spinner"></div> Parsing AI instructions...</div>';
+                
+                setTimeout(() => {
+                    executePatches(instructions);
+                }, 400); // Artificial delay for effect
+            }, 300);
+        }
 
-            const instructions = instructionsInput.value.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-            if (!instructions.trim()) {
-                logToConsole("Error: No AI instructions provided.", 'warning');
-                return;
-            }
-
-            clearConsole();
-            logToConsole("Initializing Regex Parser...", 'info');
-
-            // REGEX EXPLANATION:
-            // Matches ``` followed optionally by characters (like 'javascript') and a newline.
-            // Captures everything ([\s\S]*?) until it hits the next ```.
-            // This strictly ignores all conversational fluff outside the blocks.
+        function executePatches(instructions) {
+            const normalizedInstructions = instructions.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
             const regex = /```[^\n]*\n([\s\S]*?)```/g;
             const blocks = [];
             let match;
             
-            while ((match = regex.exec(instructions)) !== null) {
-                // To ensure strict matching, we trim any trailing newline that might be left right before the closing backticks
-                // if it wasn't part of the original code snippet context.
+            while ((match = regex.exec(normalizedInstructions)) !== null) {
                 let blockContent = match[1];
-                if (blockContent.endsWith('\n')) {
-                    blockContent = blockContent.slice(0, -1);
-                }
-                if (blockContent.endsWith('\r')) {
-                    blockContent = blockContent.slice(0, -1);
-                }
+                if (blockContent.endsWith('\n')) blockContent = blockContent.slice(0, -1);
+                if (blockContent.endsWith('\r')) blockContent = blockContent.slice(0, -1);
                 blocks.push(blockContent);
             }
 
-            if (blocks.length === 0) {
-                logToConsole("No code blocks found. Ensure instructions use standard ``` backticks.", 'warning');
-                return;
-            }
+            statusList.innerHTML = ''; // Clear status list
 
-            if (blocks.length % 2 !== 0) {
-                logToConsole("Notice: Uneven number of code blocks found. The final orphaned block will be ignored.", 'info');
+            if (blocks.length === 0) {
+                statusList.innerHTML = '<div class="text-red">❗ No code blocks found</div>';
+                isProcessing = false;
+                return;
             }
 
             let patchedContent = sourceFileContent;
             let patchCount = 0;
             let successCount = 0;
 
-            logToConsole(`Found ${Math.floor(blocks.length / 2)} Find/Replace pair(s). Starting strict literal patching...`, 'info');
-
-            // Iterate through blocks in pairs (Find / Replace)
             for (let i = 0; i < blocks.length - 1; i += 2) {
                 const findString = blocks[i];
                 const replaceString = blocks[i + 1];
                 patchCount++;
 
-                // DUMB BUT PERFECT: Exact literal matching only. No fuzzy logic.
                 if (patchedContent.includes(findString)) {
                     patchedContent = patchedContent.replace(findString, replaceString);
-                    logToConsole(`✅ Patch ${patchCount} applied perfectly.`, 'success');
+                    statusList.innerHTML += `<div>✅ patch ${patchCount} applied</div>`;
                     successCount++;
                 } else {
-                    logToConsole(`⚠️ Skipped Patch ${patchCount}: 'Find' block not located exactly in source file.`, 'warning');
+                    statusList.innerHTML += `<div class="text-red">❗ patch ${patchCount} not found</div>`;
                 }
             }
 
-            logToConsole(`Process Complete: ${successCount} out of ${patchCount} patches applied successfully.`, 'info');
-
-            // --- Error Handling & Download Generation ---
+            // Output Generation
             if (successCount > 0) {
-                // Generate the new filename: original_patched.ext
-                const nameWithoutExt = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
-                const newFileName = `${nameWithoutExt}_patched.${originalFileExtension}`;
+                outputSkeleton.textContent = "Rendering...";
                 
-                // Create Blob for download
-                const blob = new Blob([patchedContent], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                
-                // Expose Download Button
-                downloadBtn.href = url;
-                downloadBtn.download = newFileName;
-                downloadBtn.style.display = 'block';
-                downloadBtn.textContent = 'Download Patched File';
+                setTimeout(() => {
+                    outputPreview.srcdoc = patchedContent;
+                    outputPreview.classList.remove('hidden');
+                    outputSkeleton.classList.add('hidden');
+                    
+                    // Generate Download
+                    const nameWithoutExt = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
+                    const newFileName = `${nameWithoutExt}_patched.${originalFileExtension}`;
+                    
+                    const blob = new Blob([patchedContent], { type: 'text/plain' });
+                    downloadBtn.href = URL.createObjectURL(blob);
+                    downloadBtn.download = newFileName;
+                    downloadBtn.classList.remove('hidden');
+                }, 300);
             } else {
-                downloadBtn.style.display = 'none';
+                outputSkeleton.textContent = "No changes applied.";
             }
-        });
+            
+            isProcessing = false;
+        }
     </script>
 </body>
 </html>
