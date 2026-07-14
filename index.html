@@ -135,14 +135,17 @@
         }
 
         .preview-container iframe {
-            width: 100%;
-            height: 100%;
+            width: 200%;
+            height: 200%;
             border: none;
             background-color: #ffffff;
             position: absolute;
             top: 0;
             left: 0;
             z-index: 2;
+            pointer-events: none;
+            transform: scale(0.5);
+            transform-origin: top left;
         }
 
         .raw-preview {
@@ -279,7 +282,7 @@
 <body>
 
     <header>
-        <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.3</span></h1>
+        <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.4</span></h1>
     </header>
 
     <main class="container">
@@ -288,11 +291,11 @@
             <div class="action-area">
                 <button id="upload-btn">Upload file</button>
                 <input type="file" id="file-input" accept=".html,.js,.css,.txt" hidden>
-                <div class="file-info" id="file-info">index.html (awaiting)</div>
+                <div class="file-info" id="file-info">No file selected</div>
             </div>
             <div class="preview-container">
                 <div class="skeleton" id="input-skeleton">Awaiting File...</div>
-                <iframe id="input-preview" class="hidden"></iframe>
+                <iframe id="input-preview" class="hidden" sandbox=""></iframe>
             </div>
         </div>
 
@@ -317,7 +320,7 @@
             </div>
             <div class="preview-container">
                 <div class="skeleton" id="output-skeleton">Awaiting Patch...</div>
-                <iframe id="output-preview" class="hidden"></iframe>
+                <iframe id="output-preview" class="hidden" sandbox=""></iframe>
             </div>
         </div>
     </main>
@@ -361,6 +364,9 @@
         let originalFileName = "";
         let originalFileExtension = "";
         let isProcessing = false;
+        let pendingInstructions = "";
+        let currentInstructions = "";
+        let failedPatchesMap = {};
 
         // --- File Ingestion ---
         uploadBtn.addEventListener('click', () => fileInput.click());
@@ -397,8 +403,14 @@
                 outputPreview.classList.add('hidden');
                 outputSkeleton.textContent = "Awaiting Patch...";
                 outputSkeleton.classList.remove('hidden');
-                statusList.innerHTML = '<div class="text-gray">✔️ ready for markdown</div>';
-                rawPreview.textContent = "Paste preview will appear here...";
+                
+                if (pendingInstructions) {
+                    processInstructions(pendingInstructions);
+                    pendingInstructions = "";
+                } else {
+                    statusList.innerHTML = '<div class="text-gray">✔️ ready for markdown</div>';
+                    rawPreview.textContent = "Paste preview will appear here...";
+                }
             };
             reader.readAsText(file);
         });
@@ -420,12 +432,28 @@
             }
         });
 
+        // --- Error Link Routing ---
+        statusList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('error-link')) {
+                e.preventDefault();
+                const patchId = e.target.getAttribute('data-patch');
+                const findString = failedPatchesMap[patchId];
+                if (findString && currentInstructions) {
+                    manualInput.value = currentInstructions;
+                    editorModal.showModal();
+                    
+                    const start = currentInstructions.indexOf(findString);
+                    if (start !== -1) {
+                        const end = start + findString.length;
+                        manualInput.focus();
+                        manualInput.setSelectionRange(start, end);
+                    }
+                }
+            }
+        });
+
         // --- Clipboard Flow (Option A) ---
         clipboardBtn.addEventListener('click', async () => {
-            if (!sourceFileContent) {
-                statusList.innerHTML = '<div class="text-red">❗ Upload a file first</div>';
-                return;
-            }
             if (isProcessing) return;
 
             try {
@@ -434,7 +462,15 @@
                     statusList.innerHTML = '<div class="text-red">❗ Clipboard is empty</div>';
                     return;
                 }
-                processInstructions(text);
+                
+                if (!sourceFileContent) {
+                    pendingInstructions = text;
+                    currentInstructions = text;
+                    rawPreview.textContent = text.substring(0, 500) + (text.length > 500 ? "..." : "");
+                    statusList.innerHTML = '<div class="text-gray">✔️ Markdown ready. Awaiting file upload...</div>';
+                } else {
+                    processInstructions(text);
+                }
             } catch (err) {
                 // Fallback if clipboard API blocked
                 statusList.innerHTML = '<div class="text-red">❗ Auto-paste blocked. Tap box below.</div>';
@@ -445,6 +481,8 @@
         // --- Core Engine Logic ---
         function processInstructions(instructions) {
             isProcessing = true;
+            currentInstructions = instructions;
+            failedPatchesMap = {};
             
             // Update UI to Processing State
             rawPreview.textContent = instructions.substring(0, 500) + (instructions.length > 500 ? "..." : "");
@@ -494,7 +532,8 @@
                     statusList.innerHTML += `<div>✅ patch ${patchCount} applied</div>`;
                     successCount++;
                 } else {
-                    statusList.innerHTML += `<div class="text-red">❗ patch ${patchCount} not found</div>`;
+                    failedPatchesMap[patchCount] = findString;
+                    statusList.innerHTML += `<a href="#" class="error-link text-red" data-patch="${patchCount}" style="display:block; text-decoration:none; margin-top:0.25rem;">❗ patch ${patchCount} not found (click to locate)</a>`;
                 }
             }
 
