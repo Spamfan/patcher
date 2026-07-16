@@ -52,9 +52,29 @@
         }
 
         /* Module Layout System */
+        .top-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--accent-color);
+            border: 2px solid var(--accent-color);
+            padding: 0.5rem 1rem;
+            font-size: 0.95rem;
+            width: auto;
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--accent-color);
+            color: #ffffff;
+        }
+
         .container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 2rem;
             width: 100%;
             max-width: 1400px;
@@ -67,6 +87,11 @@
             flex-direction: column;
             gap: 1rem;
             width: 100%;
+            background-color: var(--bg-panel);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
         }
 
         /* Action/Input Area */
@@ -125,13 +150,39 @@
         .preview-container {
             position: relative;
             width: 100%;
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 4 / 3;
             background-color: var(--bg-panel);
             border: 2px solid var(--border-color);
             border-radius: var(--radius);
             overflow: hidden;
             box-shadow: var(--shadow);
             cursor: pointer;
+        }
+
+        details.accordion {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 0.5rem 1rem;
+            margin: 1rem 0;
+        }
+
+        details.accordion summary {
+            font-weight: bold;
+            cursor: pointer;
+            margin: -0.5rem -1rem;
+            padding: 0.5rem 1rem;
+        }
+
+        details.accordion summary:hover {
+            background-color: #e5e7eb;
+        }
+
+        details.accordion p {
+            margin-top: 1rem;
+            margin-bottom: 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
         }
 
         .preview-container iframe {
@@ -282,7 +333,11 @@
 <body>
 
     <header>
-        <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.4</span></h1>
+        <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.5</span></h1>
+        <div class="top-actions">
+            <button id="btn-how-to" class="btn-secondary">How to use</button>
+            <button id="btn-workflow" class="btn-secondary">LLM Workflow</button>
+        </div>
     </header>
 
     <main class="container">
@@ -336,6 +391,88 @@
         <button id="apply-manual-btn">Apply Patches</button>
     </dialog>
 
+    <!-- How To Use Modal -->
+    <dialog id="modal-how-to">
+        <div class="modal-header">
+            <h2>How to use</h2>
+            <button class="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--text-muted);">Close</button>
+        </div>
+        <div style="overflow-y: auto; padding-right: 1rem; line-height: 1.6;">
+            <p>Hi! This niche site is made for using exact find replace coding blocks from llms (fuzzy matching not yet supportef sorry 💔)</p>
+            <p>Suggested used for Patcher when vibe coding.</p>
+            <p>1) I suggest using the provided PDF when working with an LLM to ensure markdown format acceptable to Patcher. You can alternatively make sure the AIA you are using provides exact find and replace code blocks using this example markdown format. Please keep in mind fuzzy matching isn't supported here yet, so the code blocks it provides must be entirely unabbreviated:</p>
+            
+        
+        <pre style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; overflow-x: auto; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.4; margin: 1rem 0;">Patch 1/2
+Find
+&#96;&#96;&#96;html
+Old code here
+&lt;/div&gt;
+&#96;&#96;&#96;
+Replace with 
+&#96;&#96;&#96;html
+New code here 
+&#96;&#96;&#96;
+
+Patch 2/2
+Find
+&#96;&#96;&#96;html
+&lt;p&gt; hello world&lt;/p&gt;
+&lt;/div&gt;
+&#96;&#96;&#96;
+Replace with 
+&#96;&#96;&#96;html
+&lt;p&gt; hello again world&lt;/p&gt; 
+&#96;&#96;&#96;
+</pre>
+
+            <p>2) when ready, upload your current file that needs the patches applied (index.html, etc)</p>
+            <p>3) use the button or manual textbox to paste your LLMs entire response that includes the markdown find and replace blocks. You don't need to erase the intro, outro, or other filler texts since Patcher uses regex to look just at the targeted markdown code blocks.</p>
+            <p>4) patchet will immediately tell you which patches when thru right, and let you download the new file with all successful patches.</p>
+            <p>5) unsuccessful patches are individual skipped; tapping or clicking on them should highlight where the markdown code struggled to find a find block etc.</p>
+            <p>6) feel free to view this websites code directly on GitHub.com/spamfan/patcher to modify to your own uses!! :) if you're new to vibe coding or don't feel like you have a comfortable vibe coding LLM setup, I recommend also seeing my AI studio vibe coding recommendations.</p>
+        </div>
+    </dialog>
+
+    <!-- LLM Workflow Modal -->
+    <dialog id="modal-workflow">
+        <div class="modal-header">
+            <h2>Suggested LLM workflow and resources</h2>
+            <button class="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--text-muted);">Close</button>
+        </div>
+        <div style="overflow-y: auto; padding-right: 1rem; line-height: 1.6;">
+            <p><strong>NOTE:</strong> I don't really know much of vibe coding but this a flow that has worked well for me. Why you could probably utilize this for other LLMs, this guide is especially tailored for using Gemini pro via AI studio.</p>
+            
+            <details class="accordion">
+                <summary>Why is low token count important?</summary>
+                <p>Keeping the context tokens in a chat as low as possible gives LLMs more clarity, speed, and less hallucinations.</p>
+                <p>Example: user makes an app, has an entire 8 messaged between themselves and the AIA on modifying the app to support dark mode. The user follows thru then realizes they don't want dark mode. It is incredibly more efficient for the user and LLM to delete these 8 messages rather than "modifying" the file again to get back to its starting point. Anytime the LLM is talked to, it has to re-read the entire conversation and restructure the initial html with all patches. This is why rebranching and deleting irrelevant pieces is highly important. I find the most efficiency as only using one AI agent for one version change most the time, then re branching when working on more features.</p>
+            </details>
+
+            <ol>
+                <li>I recommend starting a new AI studio conversation with the latest available free (DO NOT ATTACH CARD) pro model such as Gemini 3.1 pro etc. I recommend using these settings:
+                    <ul>
+                        <li>Temperature: 0.8</li>
+                        <li>URL context; on</li>
+                        <li>Grounding with Google search: on</li>
+                        <li>Grounding with Google maps: only turn this on if the project you're working on uses realtime map information (rare)</li>
+                        <li>Code execution: on (turn this on as a last priority if it lets you, if it doesn't I won't worry about it, the others are more important imo.)</li>
+                        <li>Top p limit, output length, etc: these and any other settings are usually fine to leave on default.</li>
+                    </ul>
+                </li>
+                <li>in the new prompt, I recommend uploading the attached ldd.pdf or your own version. (Once a project becomes large enough i add more sections to the ldd for my specific project/ecosystem)</li>
+                <li>if you have important project files the AIA should know, such as an html codebase etc I recommend uploading that now with the ldd.</li>
+                <li>you can usually leave your introduction blank and just let it read the attachments and run.</li>
+                <li>if you're making a new application, I suggest letting it eventually create the codebase for you. I suggest all subsequent changes use find and replace blocks.</li>
+                <li>once enough changes have been made, anywhere between 1-10 individual sets of patches, and/or when context tokens = 100-150k, I highly recommend "rebranching" the chat.</li>
+                <li>to rebranch, simply scroll to the top of the chat where the ldd and index were uploaded (incl ur intro if wanted.). Click more more options>branch from here.</li>
+                <li>in the branched off chat, dohnle chsck the settings are how you wanted them. Delete and reupload any updated media, such as your ldd if you have a newer one, or (more likely) your newest codebase versions (most current index.html etc etc)</li>
+                <li>if a conversation with AI studio takes a detour , or any other chunk of conversation ends up becoming irrelevant (example: you discussion with an ai potential code solutions you chose not to pursue, conversational errors on either individuals parts etc etc), it's highly recommended to delete thay part of the conversation and correct it if applicable. These keeps contexts limits down.</li>
+                <li>when the AI is onto the patches phase, simply click it's entire response > more options > Copy as markdown, and paste it's whole response into patcher. Upload your codebase needing patches to patcher and download the output if successful.</li>
+            </ol>
+        </div>
+    </dialog>
+
     <script>
         // --- DOM Elements ---
         const uploadBtn = document.getElementById('upload-btn');
@@ -358,6 +495,13 @@
         const manualInput = document.getElementById('manual-input');
         const closeModalBtn = document.getElementById('close-modal-btn');
         const applyManualBtn = document.getElementById('apply-manual-btn');
+        
+        const btnHowTo = document.getElementById('btn-how-to');
+        const btnWorkflow = document.getElementById('btn-workflow');
+        const modalHowTo = document.getElementById('modal-how-to');
+        const modalWorkflow = document.getElementById('modal-workflow');
+        const allDialogs = document.querySelectorAll('dialog');
+        const allCloseBtns = document.querySelectorAll('.close-modal-btn');
 
         // --- State Management ---
         let sourceFileContent = "";
@@ -420,8 +564,28 @@
             editorModal.showModal();
         });
         
+        btnHowTo.addEventListener('click', () => modalHowTo.showModal());
+        btnWorkflow.addEventListener('click', () => modalWorkflow.showModal());
+        
         closeModalBtn.addEventListener('click', () => {
             editorModal.close();
+        });
+        
+        allCloseBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.target.closest('dialog').close();
+            });
+        });
+
+        allDialogs.forEach(dialog => {
+            dialog.addEventListener('click', (e) => {
+                const rect = dialog.getBoundingClientRect();
+                const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
+                                    rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+                if (!isInDialog) {
+                    dialog.close();
+                }
+            });
         });
 
         applyManualBtn.addEventListener('click', () => {
