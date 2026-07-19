@@ -333,7 +333,7 @@
 <body>
 
     <header>
-        <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.5</span></h1>
+        <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.6</span></h1>
         <div class="top-actions">
             <button id="btn-how-to" class="btn-secondary">How to use</button>
             <button id="btn-workflow" class="btn-secondary">LLM Workflow</button>
@@ -398,8 +398,8 @@
             <button class="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--text-muted);">Close</button>
         </div>
         <div style="overflow-y: auto; padding-right: 1rem; line-height: 1.6;">
-            <p>Hi! This niche site is made for using exact find replace coding blocks from llms (fuzzy matching not yet supportef sorry 💔)</p>
-            <p>Suggested used for Patcher when vibe coding.</p>
+            <p>Hi! This niche site is made for using exact find replace coding blocks from LLMs (fuzzy matching not yet supported sorry 💔)</p>
+            <p>Suggested use for Patcher when vibe coding.</p>
             <p>1) I suggest using the provided PDF when working with an LLM to ensure markdown format acceptable to Patcher. You can alternatively make sure the AIA you are using provides exact find and replace code blocks using this example markdown format. Please keep in mind fuzzy matching isn't supported here yet, so the code blocks it provides must be entirely unabbreviated:</p>
             
         
@@ -426,11 +426,11 @@ Replace with
 &#96;&#96;&#96;
 </pre>
 
-            <p>2) when ready, upload your current file that needs the patches applied (index.html, etc)</p>
-            <p>3) use the button or manual textbox to paste your LLMs entire response that includes the markdown find and replace blocks. You don't need to erase the intro, outro, or other filler texts since Patcher uses regex to look just at the targeted markdown code blocks.</p>
-            <p>4) patchet will immediately tell you which patches when thru right, and let you download the new file with all successful patches.</p>
-            <p>5) unsuccessful patches are individual skipped; tapping or clicking on them should highlight where the markdown code struggled to find a find block etc.</p>
-            <p>6) feel free to view this websites code directly on GitHub.com/spamfan/patcher to modify to your own uses!! :) if you're new to vibe coding or don't feel like you have a comfortable vibe coding LLM setup, I recommend also seeing my AI studio vibe coding recommendations.</p>
+            <p>2) When ready, upload your current file that needs the patches applied (index.html, etc)</p>
+            <p>3) Use the button or manual textbox to paste your LLM's entire response that includes the markdown find and replace blocks. You don't need to erase the intro, outro, or other filler texts since Patcher uses regex to look just at the targeted markdown code blocks.</p>
+            <p>4) Patcher will immediately tell you which patches went through right, and let you download the new file with all successful patches.</p>
+            <p>5) Unsuccessful patches are individually skipped; tapping or clicking on them should highlight where the markdown code struggled to find a find block etc.</p>
+            <p>6) Feel free to view this website's code directly on GitHub.com/spamfan/patcher to modify to your own uses!! :) If you're new to vibe coding or don't feel like you have a comfortable vibe coding LLM setup, I recommend also seeing my AI Studio vibe coding recommendations.</p>
         </div>
     </dialog>
 
@@ -441,12 +441,12 @@ Replace with
             <button class="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--text-muted);">Close</button>
         </div>
         <div style="overflow-y: auto; padding-right: 1rem; line-height: 1.6;">
-            <p><strong>NOTE:</strong> I don't really know much of vibe coding but this a flow that has worked well for me. Why you could probably utilize this for other LLMs, this guide is especially tailored for using Gemini pro via AI studio.</p>
+            <p><strong>NOTE:</strong> I don't really know much of vibe coding but this is a flow that has worked well for me. While you could probably utilize this for other LLMs, this guide is especially tailored for using Gemini pro via AI studio.</p>
             
             <details class="accordion">
                 <summary>Why is low token count important?</summary>
                 <p>Keeping the context tokens in a chat as low as possible gives LLMs more clarity, speed, and less hallucinations.</p>
-                <p>Example: user makes an app, has an entire 8 messaged between themselves and the AIA on modifying the app to support dark mode. The user follows thru then realizes they don't want dark mode. It is incredibly more efficient for the user and LLM to delete these 8 messages rather than "modifying" the file again to get back to its starting point. Anytime the LLM is talked to, it has to re-read the entire conversation and restructure the initial html with all patches. This is why rebranching and deleting irrelevant pieces is highly important. I find the most efficiency as only using one AI agent for one version change most the time, then re branching when working on more features.</p>
+                <p>Example: user makes an app, has an entire 8 messages between themselves and the AIA on modifying the app to support dark mode. The user follows through then realizes they don't want dark mode. It is incredibly more efficient for the user and LLM to delete these 8 messages rather than "modifying" the file again to get back to its starting point. Anytime the LLM is talked to, it has to re-read the entire conversation and restructure the initial html with all patches. This is why rebranching and deleting irrelevant pieces is highly important. I find the most efficiency as only using one AI agent for one version change most the time, then rebranching when working on more features.</p>
             </details>
 
             <ol>
@@ -460,15 +460,15 @@ Replace with
                         <li>Top p limit, output length, etc: these and any other settings are usually fine to leave on default.</li>
                     </ul>
                 </li>
-                <li>in the new prompt, I recommend uploading the attached ldd.pdf or your own version. (Once a project becomes large enough i add more sections to the ldd for my specific project/ecosystem)</li>
-                <li>if you have important project files the AIA should know, such as an html codebase etc I recommend uploading that now with the ldd.</li>
-                <li>you can usually leave your introduction blank and just let it read the attachments and run.</li>
-                <li>if you're making a new application, I suggest letting it eventually create the codebase for you. I suggest all subsequent changes use find and replace blocks.</li>
-                <li>once enough changes have been made, anywhere between 1-10 individual sets of patches, and/or when context tokens = 100-150k, I highly recommend "rebranching" the chat.</li>
-                <li>to rebranch, simply scroll to the top of the chat where the ldd and index were uploaded (incl ur intro if wanted.). Click more more options>branch from here.</li>
-                <li>in the branched off chat, dohnle chsck the settings are how you wanted them. Delete and reupload any updated media, such as your ldd if you have a newer one, or (more likely) your newest codebase versions (most current index.html etc etc)</li>
-                <li>if a conversation with AI studio takes a detour , or any other chunk of conversation ends up becoming irrelevant (example: you discussion with an ai potential code solutions you chose not to pursue, conversational errors on either individuals parts etc etc), it's highly recommended to delete thay part of the conversation and correct it if applicable. These keeps contexts limits down.</li>
-                <li>when the AI is onto the patches phase, simply click it's entire response > more options > Copy as markdown, and paste it's whole response into patcher. Upload your codebase needing patches to patcher and download the output if successful.</li>
+                <li>In the new prompt, I recommend uploading the attached LDD.pdf or your own version. (Once a project becomes large enough I add more sections to the LDD for my specific project/ecosystem)</li>
+                <li>If you have important project files the AIA should know, such as an HTML codebase etc I recommend uploading that now with the LDD.</li>
+                <li>You can usually leave your introduction blank and just let it read the attachments and run.</li>
+                <li>If you're making a new application, I suggest letting it eventually create the codebase for you. I suggest all subsequent changes use find and replace blocks.</li>
+                <li>Once enough changes have been made, anywhere between 1-10 individual sets of patches, and/or when context tokens = 100-150k, I highly recommend "rebranching" the chat.</li>
+                <li>To rebranch, simply scroll to the top of the chat where the LDD and index were uploaded (incl your intro if wanted.). Click more options>branch from here.</li>
+                <li>In the branched off chat, double check the settings are how you wanted them. Delete and reupload any updated media, such as your LDD if you have a newer one, or (more likely) your newest codebase versions (most current index.html etc etc)</li>
+                <li>If a conversation with AI Studio takes a detour, or any other chunk of conversation ends up becoming irrelevant (example: your discussion with an AI regarding potential code solutions you chose not to pursue, conversational errors on either individual parts etc etc), it's highly recommended to delete that part of the conversation and correct it if applicable. This keeps context limits down.</li>
+                <li>When the AI is onto the patches phase, simply click its entire response > more options > Copy as markdown, and paste its whole response into Patcher. Upload your codebase needing patches to Patcher and download the output if successful.</li>
             </ol>
         </div>
     </dialog>
