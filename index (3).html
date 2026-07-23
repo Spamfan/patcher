@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patcher</title>
+    <style>
+        /* CRITICAL ARCHITECTURE: CSS Variables Skeleton */
+        :root {
+            --bg-main: #f4f5f7;
+            --bg-panel: #ffffff;
+            --text-main: #1a1a1a;
+            --text-muted: #6b7280;
+            --border-color: #d1d5db;
+            --border-hover: #9ca3af;
+            --accent-color: #2563eb;
+            --accent-hover: #1d4ed8;
+            --success-color: #16a34a;
+            --warning-color: #ea580c; /* Dark orange/red for error visibility */
+            --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            --radius: 8px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: var(--text-main);
+        }
+
+        /* Module Layout System */
+        .top-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--accent-color);
+            border: 2px solid var(--accent-color);
+            padding: 0.5rem 1rem;
+            font-size: 0.95rem;
+            width: auto;
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--accent-color);
+            color: #ffffff;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            width: 100%;
+            max-width: 1400px;
+            flex-grow: 1;
+            align-items: start;
+        }
+
+        .module {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+            background-color: var(--bg-panel);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        /* Action/Input Area */
+        .action-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .file-info, .status-text {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            min-height: 1.2rem;
+        }
+
+        /* Buttons */
+        button, .download-btn {
+            padding: 1rem;
+            border: none;
+            border-radius: var(--radius);
+            background-color: var(--accent-color);
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow);
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button:hover:not(:disabled), .download-btn:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background-color: var(--border-color);
+            cursor: not-allowed;
+            color: var(--text-muted);
+            box-shadow: none;
+            transform: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Previews & Iframes */
+        .preview-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background-color: var(--bg-panel);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+        }
+
+        details.accordion {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 0.5rem 1rem;
+            margin: 1rem 0;
+        }
+
+        details.accordion summary {
+            font-weight: bold;
+            cursor: pointer;
+            margin: -0.5rem -1rem;
+            padding: 0.5rem 1rem;
+        }
+
+        details.accordion summary:hover {
+            background-color: #e5e7eb;
+        }
+
+        details.accordion p {
+            margin-top: 1rem;
+            margin-bottom: 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .preview-container iframe {
+            width: 200%;
+            height: 200%;
+            border: none;
+            background-color: #ffffff;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            pointer-events: none;
+            transform: scale(0.5);
+            transform-origin: top left;
+        }
+
+        .raw-preview {
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: pre-wrap;
+            word-break: break-all;
+            overflow: hidden;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            background: var(--bg-panel);
+        }
+
+        /* Status List */
+        .status-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-align: left;
+            margin-top: 0.5rem;
+        }
+
+        .text-green { color: var(--success-color); }
+        .text-red { color: var(--warning-color); }
+        .text-gray { color: var(--text-muted); text-align: center; }
+
+        /* Animations & Loaders */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+
+        .skeleton {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #e5e7eb;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        /* Modal Dialog */
+        dialog {
+            width: 90vw;
+            max-width: 800px;
+            height: 80vh;
+            border: none;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 2rem;
+            background: var(--bg-main);
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 9999;
+        }
+
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+        }
+
+        dialog[open] {
+            display: flex; /* Override default block display */
+        }
+
+        dialog textarea {
+            width: 100%;
+            flex-grow: 1;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            resize: none;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 { margin: 0; font-size: 1.5rem; }
+
+        /* Responsive Layout - Mobile */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+            }
+            .module {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                align-items: start;
+            }
+            .preview-container {
+                aspect-ratio: auto;
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.6</span></h1>
+        <div class="top-actions">
+            <button id="btn-how-to" class="btn-secondary">How to use</button>
+            <button id="btn-workflow" class="btn-secondary">LLM Workflow</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Module 1: Input Zone -->
+        <div class="module">
+            <div class="action-area">
+                <button id="upload-btn">Upload file</button>
+                <input type="file" id="file-input" accept=".html,.js,.css,.txt" hidden>
+                <div class="file-info" id="file-info">No file selected</div>
+            </div>
+            <div class="preview-container">
+                <div class="skeleton" id="input-skeleton">Awaiting File...</div>
+                <iframe id="input-preview" class="hidden" sandbox=""></iframe>
+            </div>
+        </div>
+
+        <!-- Module 2: Engine Zone -->
+        <div class="module">
+            <div class="action-area">
+                <button id="clipboard-btn">Input LLM markdown<br>from clipboard</button>
+                <div class="status-list" id="status-list">
+                    <div class="text-gray">✔️ no input</div>
+                </div>
+            </div>
+            <div class="preview-container" id="raw-preview-container" title="Tap to manually edit">
+                <div class="skeleton hidden" id="engine-skeleton"></div>
+                <div class="raw-preview" id="raw-preview">Paste preview will appear here...</div>
+            </div>
+        </div>
+
+        <!-- Module 3: Output Zone -->
+        <div class="module">
+            <div class="action-area">
+                <a id="download-btn" class="download-btn hidden">Download patched file</a>
+            </div>
+            <div class="preview-container">
+                <div class="skeleton" id="output-skeleton">Awaiting Patch...</div>
+                <iframe id="output-preview" class="hidden" sandbox=""></iframe>
+            </div>
+        </div>
+    </main>
+
+    <!-- Fallback Text Editor Modal -->
+    <dialog id="editor-modal">
+        <div class="modal-header">
+            <h2>Manual Input</h2>
+            <button id="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--text-muted);">Close</button>
+        </div>
+        <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Auto-paste blocked or unavailable. Please paste your LLM markdown below.</p>
+        <textarea id="manual-input" placeholder="Paste AI instructions here..." spellcheck="false" maxlength="5000000"></textarea>
+        <button id="apply-manual-btn">Apply Patches</button>
+    </dialog>
+
+    <!-- How To Use Modal -->
+    <dialog id="modal-how-to">
+        <div class="modal-header">
+            <h2>How to use</h2>
+            <button class="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--text-muted);">Close</button>
+        </div>
+        <div style="overflow-y: auto; padding-right: 1rem; line-height: 1.6;">
+            <p>Hi! This niche site is made for using exact find replace coding blocks from LLMs (fuzzy matching not yet supported sorry 💔)</p>
+            <p>Suggested use for Patcher when vibe coding.</p>
+            <p>1) I suggest using the provided PDF when working with an LLM to ensure markdown format acceptable to Patcher. You can alternatively make sure the AIA you are using provides exact find and replace code blocks using this example markdown format. Please keep in mind fuzzy matching isn't supported here yet, so the code blocks it provides must be entirely unabbreviated:</p>
+            
+        
+        <pre style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; overflow-x: auto; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.4; margin: 1rem 0;">Patch 1/2
+Find
+&#96;&#96;&#96;html
+Old code here
+&lt;/div&gt;
+&#96;&#96;&#96;
+Replace with 
+&#96;&#96;&#96;html
+New code here 
+&#96;&#96;&#96;
+
+Patch 2/2
+Find
+&#96;&#96;&#96;html
+&lt;p&gt; hello world&lt;/p&gt;
+&lt;/div&gt;
+&#96;&#96;&#96;
+Replace with 
+&#96;&#96;&#96;html
+&lt;p&gt; hello again world&lt;/p&gt; 
+&#96;&#96;&#96;
+</pre>
+
+            <p>2) When ready, upload your current file that needs the patches applied (index.html, etc)</p>
+            <p>3) Use the button or manual textbox to paste your LLM's entire response that includes the markdown find and replace blocks. You don't need to erase the intro, outro, or other filler texts since Patcher uses regex to look just at the targeted markdown code blocks.</p>
+            <p>4) Patcher will immediately tell you which patches went through right, and let you download the new file with all successful patches.</p>
+            <p>5) Unsuccessful patches are individually skipped; tapping or clicking on them should highlight where the markdown code struggled to find a find block etc.</p>
+            <p>6) Feel free to view this website's code directly on GitHub.com/spamfan/patcher to modify to your own uses!! :) If you're new to vibe coding or don't feel like you have a comfortable vibe coding LLM setup, I recommend also seeing my AI Studio vibe coding recommendations.</p>
+        </div>
+    </dialog>
+
+    <!-- LLM Workflow Modal -->
+    <dialog id="modal-workflow">
+        <div class="modal-header">
+            <h2>Suggested LLM workflow and resources</h2>
+            <button class="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--text-muted);">Close</button>
+        </div>
+        <div style="overflow-y: auto; padding-right: 1rem; line-height: 1.6;">
+            <p><strong>NOTE:</strong> I don't really know much of vibe coding but this is a flow that has worked well for me. While you could probably utilize this for other LLMs, this guide is especially tailored for using Gemini pro via AI studio.</p>
+            
+            <details class="accordion">
+                <summary>Why is low token count important?</summary>
+                <p>Keeping the context tokens in a chat as low as possible gives LLMs more clarity, speed, and less hallucinations.</p>
+                <p>Example: user makes an app, has an entire 8 messages between themselves and the AIA on modifying the app to support dark mode. The user follows through then realizes they don't want dark mode. It is incredibly more efficient for the user and LLM to delete these 8 messages rather than "modifying" the file again to get back to its starting point. Anytime the LLM is talked to, it has to re-read the entire conversation and restructure the initial html with all patches. This is why rebranching and deleting irrelevant pieces is highly important. I find the most efficiency as only using one AI agent for one version change most the time, then rebranching when working on more features.</p>
+            </details>
+
+            <ol>
+                <li>I recommend starting a new AI studio conversation with the latest available free (DO NOT ATTACH CARD) pro model such as Gemini 3.1 pro etc. I recommend using these settings:
+                    <ul>
+                        <li>Temperature: 0.8</li>
+                        <li>URL context; on</li>
+                        <li>Grounding with Google search: on</li>
+                        <li>Grounding with Google maps: only turn this on if the project you're working on uses realtime map information (rare)</li>
+                        <li>Code execution: on (turn this on as a last priority if it lets you, if it doesn't I won't worry about it, the others are more important imo.)</li>
+                        <li>Top p limit, output length, etc: these and any other settings are usually fine to leave on default.</li>
+                    </ul>
+                </li>
+                <li>In the new prompt, I recommend uploading the attached LDD.pdf or your own version. (Once a project becomes large enough I add more sections to the LDD for my specific project/ecosystem)</li>
+                <li>If you have important project files the AIA should know, such as an HTML codebase etc I recommend uploading that now with the LDD.</li>
+                <li>You can usually leave your introduction blank and just let it read the attachments and run.</li>
+                <li>If you're making a new application, I suggest letting it eventually create the codebase for you. I suggest all subsequent changes use find and replace blocks.</li>
+                <li>Once enough changes have been made, anywhere between 1-10 individual sets of patches, and/or when context tokens = 100-150k, I highly recommend "rebranching" the chat.</li>
+                <li>To rebranch, simply scroll to the top of the chat where the LDD and index were uploaded (incl your intro if wanted.). Click more options>branch from here.</li>
+                <li>In the branched off chat, double check the settings are how you wanted them. Delete and reupload any updated media, such as your LDD if you have a newer one, or (more likely) your newest codebase versions (most current index.html etc etc)</li>
+                <li>If a conversation with AI Studio takes a detour, or any other chunk of conversation ends up becoming irrelevant (example: your discussion with an AI regarding potential code solutions you chose not to pursue, conversational errors on either individual parts etc etc), it's highly recommended to delete that part of the conversation and correct it if applicable. This keeps context limits down.</li>
+                <li>When the AI is onto the patches phase, simply click its entire response > more options > Copy as markdown, and paste its whole response into Patcher. Upload your codebase needing patches to Patcher and download the output if successful.</li>
+            </ol>
+        </div>
+    </dialog>
+
+    <script>
+        // --- DOM Elements ---
+        const uploadBtn = document.getElementById('upload-btn');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        
+        const inputSkeleton = document.getElementById('input-skeleton');
+        const inputPreview = document.getElementById('input-preview');
+        
+        const clipboardBtn = document.getElementById('clipboard-btn');
+        const statusList = document.getElementById('status-list');
+        const rawPreviewContainer = document.getElementById('raw-preview-container');
+        const rawPreview = document.getElementById('raw-preview');
+        
+        const outputSkeleton = document.getElementById('output-skeleton');
+        const outputPreview = document.getElementById('output-preview');
+        const downloadBtn = document.getElementById('download-btn');
+
+        const editorModal = document.getElementById('editor-modal');
+        const manualInput = document.getElementById('manual-input');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const applyManualBtn = document.getElementById('apply-manual-btn');
+        
+        const btnHowTo = document.getElementById('btn-how-to');
+        const btnWorkflow = document.getElementById('btn-workflow');
+        const modalHowTo = document.getElementById('modal-how-to');
+        const modalWorkflow = document.getElementById('modal-workflow');
+        const allDialogs = document.querySelectorAll('dialog');
+        const allCloseBtns = document.querySelectorAll('.close-modal-btn');
+
+        // --- State Management ---
+        let sourceFileContent = "";
+        let originalFileName = "";
+        let originalFileExtension = "";
+        let isProcessing = false;
+        let pendingInstructions = "";
+        let currentInstructions = "";
+        let failedPatchesMap = {};
+
+        // --- File Ingestion ---
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            originalFileName = file.name;
+            const parts = originalFileName.split('.');
+            originalFileExtension = parts.length > 1 ? parts.pop() : '';
+            
+            uploadBtn.textContent = "Upload different file";
+            fileInfo.textContent = originalFileName;
+            
+            // Show loading state
+            inputPreview.classList.add('hidden');
+            inputSkeleton.textContent = "Loading...";
+            inputSkeleton.classList.remove('hidden');
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                sourceFileContent = e.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                
+                // Render iframe preview with a slight artificial delay for smoothness
+                setTimeout(() => {
+                    inputPreview.srcdoc = sourceFileContent;
+                    inputPreview.classList.remove('hidden');
+                    inputSkeleton.classList.add('hidden');
+                }, 300);
+
+                // Reset outputs
+                downloadBtn.classList.add('hidden');
+                outputPreview.classList.add('hidden');
+                outputSkeleton.textContent = "Awaiting Patch...";
+                outputSkeleton.classList.remove('hidden');
+                
+                if (pendingInstructions) {
+                    processInstructions(pendingInstructions);
+                    pendingInstructions = "";
+                } else {
+                    statusList.innerHTML = '<div class="text-gray">✔️ ready for markdown</div>';
+                    rawPreview.textContent = "Paste preview will appear here...";
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // --- Modal Flow ---
+        rawPreviewContainer.addEventListener('click', () => {
+            editorModal.showModal();
+        });
+        
+        btnHowTo.addEventListener('click', () => modalHowTo.showModal());
+        btnWorkflow.addEventListener('click', () => modalWorkflow.showModal());
+        
+        closeModalBtn.addEventListener('click', () => {
+            editorModal.close();
+        });
+        
+        allCloseBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.target.closest('dialog').close();
+            });
+        });
+
+        allDialogs.forEach(dialog => {
+            dialog.addEventListener('click', (e) => {
+                const rect = dialog.getBoundingClientRect();
+                const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
+                                    rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+                if (!isInDialog) {
+                    dialog.close();
+                }
+            });
+        });
+
+        applyManualBtn.addEventListener('click', () => {
+            const text = manualInput.value;
+            editorModal.close();
+            if (text.trim()) {
+                processInstructions(text);
+            }
+        });
+
+        // --- Error Link Routing ---
+        statusList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('error-link')) {
+                e.preventDefault();
+                const patchId = e.target.getAttribute('data-patch');
+                const findString = failedPatchesMap[patchId];
+                if (findString && currentInstructions) {
+                    manualInput.value = currentInstructions;
+                    editorModal.showModal();
+                    
+                    const start = currentInstructions.indexOf(findString);
+                    if (start !== -1) {
+                        const end = start + findString.length;
+                        manualInput.focus();
+                        manualInput.setSelectionRange(start, end);
+                    }
+                }
+            }
+        });
+
+        // --- Clipboard Flow (Option A) ---
+        clipboardBtn.addEventListener('click', async () => {
+            if (isProcessing) return;
+
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text.trim()) {
+                    statusList.innerHTML = '<div class="text-red">❗ Clipboard is empty</div>';
+                    return;
+                }
+                
+                if (!sourceFileContent) {
+                    pendingInstructions = text;
+                    currentInstructions = text;
+                    rawPreview.textContent = text.substring(0, 500) + (text.length > 500 ? "..." : "");
+                    statusList.innerHTML = '<div class="text-gray">✔️ Markdown ready. Awaiting file upload...</div>';
+                } else {
+                    processInstructions(text);
+                }
+            } catch (err) {
+                // Fallback if clipboard API blocked
+                statusList.innerHTML = '<div class="text-red">❗ Auto-paste blocked. Tap box below.</div>';
+                editorModal.showModal();
+            }
+        });
+
+        // --- Core Engine Logic ---
+        function processInstructions(instructions) {
+            isProcessing = true;
+            currentInstructions = instructions;
+            failedPatchesMap = {};
+            
+            // Update UI to Processing State
+            rawPreview.textContent = instructions.substring(0, 500) + (instructions.length > 500 ? "..." : "");
+            statusList.innerHTML = '<div class="text-gray"><div class="spinner"></div> Reading clipboard...</div>';
+            
+            setTimeout(() => {
+                statusList.innerHTML = '<div class="text-gray"><div class="spinner"></div> Parsing AI instructions...</div>';
+                
+                setTimeout(() => {
+                    executePatches(instructions);
+                }, 400); // Artificial delay for effect
+            }, 300);
+        }
+
+        function executePatches(instructions) {
+            const normalizedInstructions = instructions.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            const regex = /```[^\n]*\n([\s\S]*?)```/g;
+            const blocks = [];
+            let match;
+            
+            while ((match = regex.exec(normalizedInstructions)) !== null) {
+                let blockContent = match[1];
+                if (blockContent.endsWith('\n')) blockContent = blockContent.slice(0, -1);
+                if (blockContent.endsWith('\r')) blockContent = blockContent.slice(0, -1);
+                blocks.push(blockContent);
+            }
+
+            statusList.innerHTML = ''; // Clear status list
+
+            if (blocks.length === 0) {
+                statusList.innerHTML = '<div class="text-red">❗ No code blocks found</div>';
+                isProcessing = false;
+                return;
+            }
+
+            let patchedContent = sourceFileContent;
+            let patchCount = 0;
+            let successCount = 0;
+
+            for (let i = 0; i < blocks.length - 1; i += 2) {
+                const findString = blocks[i];
+                const replaceString = blocks[i + 1];
+                patchCount++;
+
+                if (patchedContent.includes(findString)) {
+                    patchedContent = patchedContent.replace(findString, replaceString);
+                    statusList.innerHTML += `<div>✅ patch ${patchCount} applied</div>`;
+                    successCount++;
+                } else {
+                    failedPatchesMap[patchCount] = findString;
+                    statusList.innerHTML += `<a href="#" class="error-link text-red" data-patch="${patchCount}" style="display:block; text-decoration:none; margin-top:0.25rem;">❗ patch ${patchCount} not found (click to locate)</a>`;
+                }
+            }
+
+            // Output Generation
+            if (successCount > 0) {
+                outputSkeleton.textContent = "Rendering...";
+                
+                setTimeout(() => {
+                    outputPreview.srcdoc = patchedContent;
+                    outputPreview.classList.remove('hidden');
+                    outputSkeleton.classList.add('hidden');
+                    
+                    // Generate Download
+                    const nameWithoutExt = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
+                    const newFileName = `${nameWithoutExt}_patched.${originalFileExtension}`;
+                    
+                    const blob = new Blob([patchedContent], { type: 'text/plain' });
+                    downloadBtn.href = URL.createObjectURL(blob);
+                    downloadBtn.download = newFileName;
+                    downloadBtn.classList.remove('hidden');
+                }, 300);
+            } else {
+                outputSkeleton.textContent = "No changes applied.";
+            }
+            
+            isProcessing = false;
+        }
+    </script>
+</body>
+</html>
