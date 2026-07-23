@@ -248,7 +248,7 @@
         }
 
         details.accordion summary:hover {
-            background-color: #e5e7eb;
+            background-color: var(--border-hover);
         }
 
         details.accordion p {
@@ -315,7 +315,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #e5e7eb;
+            background-color: var(--border-color);
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
             z-index: 1;
             display: flex;
@@ -374,6 +374,8 @@
             font-family: var(--font-mono);
             font-size: 0.875rem;
             resize: none;
+            background-color: var(--bg-main);
+            color: var(--text-main);
         }
 
         .modal-header {
@@ -407,7 +409,7 @@
 
     <header>
         <div class="header-controls">
-            <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.8</span></h1>
+            <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.9</span></h1>
             <div class="header-buttons">
                 <button id="theme-toggle" class="btn-icon" title="Toggle Dark Mode">🌙</button>
                 <button id="reset-all-btn" class="btn-icon btn-danger" title="Reset All">🗑️ Reset</button>
@@ -476,7 +478,7 @@
         </div>
         <p style="margin: 0; color: var(--text-main); font-size: 1rem;">Are you sure you want to clear all files and instructions? This cannot be undone.</p>
         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-            <button class="close-modal-btn" style="background: var(--text-muted);">Cancel</button>
+            <button class="close-modal-btn" style="background: var(--border-color); color: var(--text-main);">Cancel</button>
             <button id="confirm-reset-btn" style="background: #ef4444;">Confirm Reset</button>
         </div>
     </dialog>
@@ -485,7 +487,7 @@
     <dialog id="modal-how-to">
         <div class="modal-header">
             <h2>How to use</h2>
-            <button class="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--text-muted);">Close</button>
+            <button class="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--border-color); color: var(--text-main);">Close</button>
         </div>
         <div style="overflow-y: auto; padding-right: 1rem; line-height: 1.6;">
             <p>Hi! This niche site is made for using exact find replace coding blocks from LLMs (fuzzy matching not yet supported sorry 💔)</p>
@@ -528,7 +530,7 @@ Replace with
     <dialog id="modal-workflow">
         <div class="modal-header">
             <h2>Suggested LLM workflow and resources</h2>
-            <button class="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--text-muted);">Close</button>
+            <button class="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--border-color); color: var(--text-main);">Close</button>
         </div>
         <div style="overflow-y: auto; padding-right: 1rem; line-height: 1.6;">
             <p><strong>NOTE:</strong> I don't really know much of vibe coding but this is a flow that has worked well for me. While you could probably utilize this for other LLMs, this guide is especially tailored for using Gemini pro via AI studio.</p>
