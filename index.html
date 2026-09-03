@@ -409,7 +409,7 @@
 
     <header>
         <div class="header-controls">
-            <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.9</span></h1>
+            <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.10</span></h1>
             <div class="header-buttons">
                 <button id="theme-toggle" class="btn-icon" title="Toggle Dark Mode">🌙</button>
                 <button id="reset-all-btn" class="btn-icon btn-danger" title="Reset All">🗑️ Reset</button>
@@ -515,6 +515,24 @@ Find
 Replace with 
 &#96;&#96;&#96;html
 &lt;p&gt; hello again world&lt;/p&gt; 
+&#96;&#96;&#96;
+</pre>
+
+            <p><strong>Range Patches (New in v0.0.10):</strong> Instead of sending large code blocks to change a few lines, LLMs can target spatial anchors with <code>Find start</code> and <code>Find end</code>:</p>
+            <pre style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; overflow-x: auto; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.4; margin: 1rem 0;">Patch 1/1
+Find start
+&#96;&#96;&#96;html
+&lt;div class="container"&gt;
+&#96;&#96;&#96;
+Find end
+&#96;&#96;&#96;html
+&lt;/main&gt;
+&#96;&#96;&#96;
+Replace with 
+&#96;&#96;&#96;html
+&lt;div class="container"&gt;
+    &lt;p&gt;Replaced using anchor range!&lt;/p&gt;
+&lt;/main&gt;
 &#96;&#96;&#96;
 </pre>
 
@@ -925,25 +943,41 @@ Replace with
 
         function executePatches(instructions) {
             const normalizedInstructions = instructions.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-            // Advanced regex: specifically matches Find/Replace block pairs
-            const regex = /Find\s*```[^\n]*\n([\s\S]*?)```\s*Replace with\s*```[^\n]*\n([\s\S]*?)```/gi;
-            const blocks = [];
+            
+            // Dual-mode regex: matches Range patches (Find start ... Find end) and Standard patches (Find ...)
+            // Uses \x60 to match 3+ backticks while avoiding delimiter collisions in markdown tools
+            const b = '\\x60{3,}';
+            const rangePattern = 'Find\\s+start\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\1\\s*Find\\s+end\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\3\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\5';
+            const standardPattern = 'Find(?!\\s+start)\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\1\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\3';
+            const combinedRegex = new RegExp('(?:' + rangePattern + ')|(?:' + standardPattern + ')', 'gi');
+
+            const patches = [];
             let match;
             
-            while ((match = regex.exec(normalizedInstructions)) !== null) {
-                let findBlock = match[1];
-                let replaceBlock = match[2];
-                
-                if (findBlock.endsWith('\n')) findBlock = findBlock.slice(0, -1);
-                if (replaceBlock.endsWith('\n')) replaceBlock = replaceBlock.slice(0, -1);
-                
-                blocks.push(findBlock, replaceBlock);
+            while ((match = combinedRegex.exec(normalizedInstructions)) !== null) {
+                if (match[2] !== undefined) {
+                    // Range mode: match[2]=startBlock, match[4]=endBlock, match[6]=replaceBlock
+                    let startBlock = match[2];
+                    let endBlock = match[4];
+                    let replaceBlock = match[6];
+                    if (startBlock.endsWith('\n')) startBlock = startBlock.slice(0, -1);
+                    if (endBlock.endsWith('\n')) endBlock = endBlock.slice(0, -1);
+                    if (replaceBlock.endsWith('\n')) replaceBlock = replaceBlock.slice(0, -1);
+                    patches.push({ type: 'range', findStart: startBlock, findEnd: endBlock, replace: replaceBlock });
+                } else {
+                    // Standard mode: match[8]=findBlock, match[10]=replaceBlock
+                    let findBlock = match[8];
+                    let replaceBlock = match[10];
+                    if (findBlock.endsWith('\n')) findBlock = findBlock.slice(0, -1);
+                    if (replaceBlock.endsWith('\n')) replaceBlock = replaceBlock.slice(0, -1);
+                    patches.push({ type: 'standard', find: findBlock, replace: replaceBlock });
+                }
             }
 
             statusList.innerHTML = ''; // Clear status list
             engineSkeleton.classList.add('hidden');
 
-            if (blocks.length === 0) {
+            if (patches.length === 0) {
                 statusList.innerHTML = '<div class="text-red">❗ No valid Find/Replace blocks found</div>';
                 isProcessing = false;
                 return;
@@ -953,18 +987,37 @@ Replace with
             let patchCount = 0;
             let successCount = 0;
 
-            for (let i = 0; i < blocks.length - 1; i += 2) {
-                const findString = blocks[i];
-                const replaceString = blocks[i + 1];
+            for (let i = 0; i < patches.length; i++) {
+                const patch = patches[i];
                 patchCount++;
 
-                if (patchedContent.includes(findString)) {
-                    patchedContent = patchedContent.replace(findString, replaceString);
-                    statusList.innerHTML += `<div>✅ patch ${patchCount} applied</div>`;
-                    successCount++;
-                } else {
-                    failedPatchesMap[patchCount] = findString;
-                    statusList.innerHTML += `<a href="#" class="error-link text-red" data-patch="${patchCount}" style="display:block; text-decoration:none; margin-top:0.25rem;">❗ patch ${patchCount} not found (click to locate)</a>`;
+                if (patch.type === 'standard') {
+                    if (patchedContent.includes(patch.find)) {
+                        patchedContent = patchedContent.replace(patch.find, patch.replace);
+                        statusList.innerHTML += `<div>✅ patch ${patchCount} applied (exact)</div>`;
+                        successCount++;
+                    } else {
+                        failedPatchesMap[patchCount] = patch.find;
+                        statusList.innerHTML += `<a href="#" class="error-link text-red" data-patch="${patchCount}" style="display:block; text-decoration:none; margin-top:0.25rem;">❗ patch ${patchCount} not found (click to locate)</a>`;
+                    }
+                } else if (patch.type === 'range') {
+                    const startIndex = patchedContent.indexOf(patch.findStart);
+                    if (startIndex === -1) {
+                        failedPatchesMap[patchCount] = patch.findStart;
+                        statusList.innerHTML += `<a href="#" class="error-link text-red" data-patch="${patchCount}" style="display:block; text-decoration:none; margin-top:0.25rem;">❗ patch ${patchCount} start anchor not found (click to locate)</a>`;
+                    } else {
+                        const searchAfter = startIndex + patch.findStart.length;
+                        const endIndex = patchedContent.indexOf(patch.findEnd, searchAfter);
+                        if (endIndex === -1) {
+                            failedPatchesMap[patchCount] = patch.findEnd;
+                            statusList.innerHTML += `<a href="#" class="error-link text-red" data-patch="${patchCount}" style="display:block; text-decoration:none; margin-top:0.25rem;">❗ patch ${patchCount} end anchor not found after start (click to locate)</a>`;
+                        } else {
+                            const fullEnd = endIndex + patch.findEnd.length;
+                            patchedContent = patchedContent.slice(0, startIndex) + patch.replace + patchedContent.slice(fullEnd);
+                            statusList.innerHTML += `<div>✅ patch ${patchCount} applied (range)</div>`;
+                            successCount++;
+                        }
+                    }
                 }
             }
 
