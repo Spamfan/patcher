@@ -5,31 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patcher</title>
     <style>
-        /* CRITICAL ARCHITECTURE: CSS Variables Skeleton */
+        /* Material 3 & Architectural CSS Variables */
         :root {
-            --bg-main: #f4f5f7;
+            --bg-main: #f8f9fc;
             --bg-panel: #ffffff;
-            --text-main: #1a1a1a;
-            --text-muted: #6b7280;
-            --border-color: #d1d5db;
-            --border-hover: #9ca3af;
-            --accent-color: #2563eb;
-            --accent-hover: #1d4ed8;
-            --success-color: #16a34a;
-            --warning-color: #ea580c; /* Dark orange/red for error visibility */
+            --text-main: #191c20;
+            --text-muted: #5e616c;
+            --border-color: #dcdee6;
+            --border-hover: #bfc2cd;
+            --accent-color: #3b5998;
+            --accent-hover: #2d467c;
+            --accent-container: #dce2f9;
+            --accent-container-text: #051944;
+            --success-color: #1b6c37;
+            --warning-color: #ba1a1a;
             --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            --radius: 8px;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius-pill: 9999px;
+            --radius-card: 20px;
+            --radius-inner: 12px;
+            --shadow: 0 1px 3px 1px rgba(0, 0, 0, 0.07), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
         }
 
         [data-theme="dark"] {
-            --bg-main: #111827;
-            --bg-panel: #1f2937;
-            --text-main: #f9fafb;
-            --text-muted: #9ca3af;
-            --border-color: #374151;
-            --border-hover: #4b5563;
+            --bg-main: #111318;
+            --bg-panel: #1b1c22;
+            --text-main: #e2e2e9;
+            --text-muted: #8e909a;
+            --border-color: #373a43;
+            --border-hover: #50535d;
+            --accent-color: #afc6ff;
+            --accent-hover: #96b4fa;
+            --accent-container: #264177;
+            --accent-container-text: #dbe4ff;
+            --success-color: #72d98d;
+            --warning-color: #ffb4ab;
+        }
+
+        [data-theme="dark"] button:not(.btn-secondary):not(.btn-icon):not(#copy-output-btn) {
+            color: #0b1d3a;
         }
 
         * {
@@ -67,54 +81,85 @@
         .header-buttons {
             display: flex;
             gap: 0.5rem;
+            align-items: center;
         }
 
         .btn-icon {
             background: var(--bg-panel);
             border: 1px solid var(--border-color);
             color: var(--text-main);
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius);
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-pill);
             cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-        }
-        
-        .btn-icon:hover {
-            background: var(--border-color);
-        }
-        
-        .btn-danger {
-            color: #ef4444;
-            border-color: #ef4444;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0;
         }
 
-        .btn-danger:hover {
-            background: #ef4444;
-            color: #ffffff;
+        .btn-icon:hover {
+            background: var(--border-color);
         }
 
         h1 {
             margin: 0;
-            font-size: 2rem;
+            font-size: 1.85rem;
             color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        /* Module Layout System */
+        .version-badge {
+            font-size: 0.45em;
+            color: var(--text-muted);
+            font-weight: 600;
+            background: var(--border-color);
+            padding: 0.25rem 0.6rem;
+            border-radius: var(--radius-pill);
+        }
+
         .top-actions {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
+            align-items: center;
             flex-wrap: wrap;
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-panel);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 0.55rem 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: var(--radius-pill);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: none;
+            width: auto;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+            color: var(--text-main);
+            transform: none;
         }
 
         .drag-over {
             border: 2px dashed var(--accent-color) !important;
-            background-color: rgba(37, 99, 235, 0.05) !important;
+            background-color: rgba(59, 89, 152, 0.05) !important;
         }
 
         .output-actions {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             width: 100%;
         }
 
@@ -131,24 +176,10 @@
             outline: none;
         }
 
-        .btn-secondary {
-            background-color: transparent;
-            color: var(--accent-color);
-            border: 2px solid var(--accent-color);
-            padding: 0.5rem 1rem;
-            font-size: 0.95rem;
-            width: auto;
-        }
-        
-        .btn-secondary:hover {
-            background-color: var(--accent-color);
-            color: #ffffff;
-        }
-
         .container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 2rem;
+            gap: 1.5rem;
             width: 100%;
             max-width: 1400px;
             flex-grow: 1;
@@ -161,13 +192,12 @@
             gap: 1rem;
             width: 100%;
             background-color: var(--bg-panel);
-            padding: 1.5rem;
-            border-radius: var(--radius);
+            padding: 1.25rem;
+            border-radius: var(--radius-card);
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow);
         }
 
-        /* Action/Input Area */
         .action-area {
             display: flex;
             flex-direction: column;
@@ -176,35 +206,39 @@
         }
 
         .file-info, .status-text {
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             color: var(--text-muted);
             font-weight: 600;
             min-height: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
         }
 
-        /* Buttons */
         button, .download-btn {
-            padding: 1rem;
-            border: none;
-            border-radius: var(--radius);
+            padding: 0.75rem 1.5rem;
+            border: 1px solid transparent;
+            border-radius: var(--radius-pill);
             background-color: var(--accent-color);
             color: #ffffff;
-            font-size: 1.1rem;
-            font-weight: bold;
+            font-size: 0.95rem;
+            font-weight: 600;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
             transition: all 0.2s ease;
-            box-shadow: var(--shadow);
             width: 100%;
-            display: flex;
+            display: inline-flex;
             justify-content: center;
             align-items: center;
+            gap: 0.5rem;
+            box-shadow: none;
         }
 
         button:hover:not(:disabled), .download-btn:hover {
             background-color: var(--accent-hover);
-            transform: translateY(-1px);
+            transform: none;
         }
 
         button:disabled {
@@ -215,47 +249,40 @@
             transform: none;
         }
 
+        .btn-mini-clear {
+            width: 22px;
+            height: 22px;
+            min-width: 22px;
+            padding: 0;
+            border-radius: var(--radius-pill);
+            background: var(--border-color);
+            color: var(--text-muted);
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-mini-clear:hover {
+            background: var(--warning-color);
+            color: #ffffff;
+        }
+
         .hidden {
             display: none !important;
         }
 
-        /* Previews & Iframes */
         .preview-container {
             position: relative;
             width: 100%;
             aspect-ratio: 4 / 3;
             background-color: var(--bg-panel);
-            border: 2px solid var(--border-color);
-            border-radius: var(--radius);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            cursor: pointer;
-        }
-
-        details.accordion {
-            background: var(--bg-main);
             border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 0.5rem 1rem;
-            margin: 1rem 0;
-        }
-
-        details.accordion summary {
-            font-weight: bold;
+            border-radius: var(--radius-inner);
+            overflow: hidden;
             cursor: pointer;
-            margin: -0.5rem -1rem;
-            padding: 0.5rem 1rem;
-        }
-
-        details.accordion summary:hover {
-            background-color: var(--border-hover);
-        }
-
-        details.accordion p {
-            margin-top: 1rem;
-            margin-bottom: 0;
-            font-size: 0.95rem;
-            line-height: 1.5;
         }
 
         .preview-container iframe {
@@ -272,38 +299,26 @@
             transform-origin: top left;
         }
 
-        .raw-preview {
-            padding: 1rem;
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            white-space: pre-wrap;
-            word-break: break-all;
-            overflow: hidden;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 2;
-            background: var(--bg-panel);
-        }
-
-        /* Status List */
         .status-list {
             display: flex;
             flex-direction: column;
-            gap: 0.25rem;
-            font-weight: 600;
-            font-size: 0.95rem;
+            gap: 0.35rem;
+            font-weight: 500;
+            font-size: 0.875rem;
             text-align: left;
-            margin-top: 0.5rem;
+            margin-top: 0.25rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
         }
 
         .text-green { color: var(--success-color); }
         .text-red { color: var(--warning-color); }
-        .text-gray { color: var(--text-muted); text-align: center; }
+        .text-gray { color: var(--text-muted); text-align: center; justify-content: center; }
 
-        /* Animations & Loaders */
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: .5; }
@@ -322,7 +337,8 @@
             justify-content: center;
             align-items: center;
             color: var(--text-muted);
-            font-weight: bold;
+            font-weight: 600;
+            font-size: 0.9rem;
         }
 
         @keyframes spin {
@@ -330,52 +346,53 @@
         }
 
         .spinner {
-            width: 1.5rem;
-            height: 1.5rem;
-            border: 3px solid var(--border-color);
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid var(--border-color);
             border-top-color: var(--accent-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
             display: inline-block;
-            margin-right: 0.5rem;
             vertical-align: middle;
+        }
+
+        /* SVG Icons */
+        .icon {
+            width: 1.15rem;
+            height: 1.15rem;
+            fill: currentColor;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .icon-sm {
+            width: 0.85rem;
+            height: 0.85rem;
         }
 
         /* Modal Dialog */
         dialog {
             width: 90vw;
-            max-width: 800px;
-            height: 80vh;
-            border: none;
-            border-radius: var(--radius);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            padding: 2rem;
-            background: var(--bg-main);
+            max-width: 680px;
+            max-height: 85vh;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-card);
+            box-shadow: 0 16px 32px -4px rgba(0, 0, 0, 0.15);
+            padding: 1.75rem;
+            background: var(--bg-panel);
+            color: var(--text-main);
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.25rem;
             z-index: 9999;
         }
 
         dialog::backdrop {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(2px);
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(3px);
         }
 
         dialog[open] {
-            display: flex; /* Override default block display */
-        }
-
-        dialog textarea {
-            width: 100%;
-            flex-grow: 1;
-            padding: 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            font-family: var(--font-mono);
-            font-size: 0.875rem;
-            resize: none;
-            background-color: var(--bg-main);
-            color: var(--text-main);
+            display: flex;
         }
 
         .modal-header {
@@ -383,20 +400,74 @@
             justify-content: space-between;
             align-items: center;
         }
-        
-        .modal-header h2 { margin: 0; font-size: 1.5rem; }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.35rem;
+        }
+
+        .modal-content {
+            overflow-y: auto;
+            padding-right: 0.5rem;
+            line-height: 1.6;
+            font-size: 0.92rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .modal-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .modal-section h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .modal-chip-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: var(--accent-container);
+            color: var(--accent-container-text);
+            padding: 0.45rem 0.9rem;
+            border-radius: var(--radius-pill);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: 1px solid transparent;
+            cursor: pointer;
+            width: fit-content;
+        }
+
+        .modal-chip-link:hover {
+            filter: brightness(0.95);
+        }
+
+        pre.code-preview {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-inner);
+            padding: 0.75rem 1rem;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.4;
+            margin: 0.25rem 0;
+        }
 
         /* Responsive Layout - Mobile */
         @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
             .container {
                 grid-template-columns: 1fr;
-                gap: 3rem;
-            }
-            .module {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 1rem;
-                align-items: start;
+                gap: 1.5rem;
             }
             .preview-container {
                 aspect-ratio: auto;
@@ -409,16 +480,22 @@
 
     <header>
         <div class="header-controls">
-            <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.1.1</span></h1>
+            <h1>Patcher <span class="version-badge">v0.2.0</span></h1>
             <div class="header-buttons">
-                <button id="theme-toggle" class="btn-icon" title="Toggle Dark Mode">🌙</button>
-                <button id="reset-all-btn" class="btn-icon btn-danger" title="Reset All">🗑️ Reset</button>
+                <button id="theme-toggle" class="btn-icon" title="Toggle Theme" aria-label="Toggle Theme">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+                </button>
             </div>
         </div>
         <div class="top-actions">
-            <button id="btn-download-ldd" class="btn-secondary">Download latest LDD</button>
-            <button id="btn-how-to" class="btn-secondary">How to use</button>
-            <button id="btn-workflow" class="btn-secondary">LLM Workflow</button>
+            <button id="btn-how-to" class="btn-secondary">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.93 2.99z"/></svg>
+                How to use
+            </button>
+            <a href="https://spamfan.github.io/mdviewer" target="_blank" rel="noopener noreferrer" class="btn-secondary" title="View Markdown & LDD files">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                View LDDs on MDViewer ↗
+            </a>
         </div>
     </header>
 
@@ -430,7 +507,9 @@
                 <input type="file" id="file-input" hidden>
                 <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                     <div class="file-info" id="file-info">No file selected</div>
-                    <button id="clear-file-btn" class="hidden" style="width: auto; padding: 0.2rem 0.5rem; font-size: 0.75rem; background: var(--warning-color);">✖</button>
+                    <button id="clear-file-btn" class="btn-mini-clear hidden" title="Clear File" aria-label="Clear File">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    </button>
                 </div>
             </div>
             <div class="preview-container">
@@ -442,12 +521,17 @@
         <!-- Module 2: Engine Zone -->
         <div class="module">
             <div class="action-area">
-                <div style="display: flex; gap: 0.5rem;">
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <button id="clipboard-btn" style="flex-grow: 1;">Paste from clipboard</button>
-                    <button id="clear-instructions-btn" class="hidden" style="width: auto; padding: 0.5rem 1rem; background: var(--warning-color);" title="Clear Instructions">✖</button>
+                    <button id="clear-instructions-btn" class="btn-mini-clear hidden" title="Clear Instructions" aria-label="Clear Instructions">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    </button>
                 </div>
                 <div class="status-list" id="status-list">
-                    <div class="text-gray">✔️ no input</div>
+                    <div class="status-item text-gray">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        <span>no input</span>
+                    </div>
                 </div>
             </div>
             <div class="preview-container" id="raw-preview-container">
@@ -461,7 +545,7 @@
             <div class="action-area">
                 <div class="output-actions hidden" id="output-actions-container">
                     <a id="download-btn" class="download-btn">Download</a>
-                    <button id="copy-output-btn" style="background: var(--bg-panel); color: var(--accent-color); border: 2px solid var(--accent-color);">Copy</button>
+                    <button id="copy-output-btn" class="btn-secondary" style="width: auto;">Copy</button>
                 </div>
             </div>
             <div class="preview-container">
@@ -471,131 +555,108 @@
         </div>
     </main>
 
-    <!-- Reset Confirmation Modal -->
-    <dialog id="modal-reset">
-        <div class="modal-header">
-            <h2>Reset All?</h2>
-        </div>
-        <p style="margin: 0; color: var(--text-main); font-size: 1rem;">Are you sure you want to clear all files and instructions? This cannot be undone.</p>
-        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-            <button class="close-modal-btn" style="background: var(--border-color); color: var(--text-main);">Cancel</button>
-            <button id="confirm-reset-btn" style="background: #ef4444;">Confirm Reset</button>
-        </div>
-    </dialog>
-
-    <!-- How To Use Modal -->
+    <!-- Consolidated How To Use Modal -->
     <dialog id="modal-how-to">
         <div class="modal-header">
-            <h2>How to use</h2>
-            <button class="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--border-color); color: var(--text-main);">Close</button>
+            <h2>How to use Patcher</h2>
+            <button class="btn-mini-clear close-modal-btn" title="Close modal" aria-label="Close modal">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
         </div>
-        <div style="overflow-y: auto; padding-right: 1rem; line-height: 1.6;">
-            <p>Hi! This niche site is made for using exact find replace coding blocks from LLMs (fuzzy matching not yet supported sorry 💔)</p>
-            <p>Suggested use for Patcher when vibe coding.</p>
-            <p>1) I suggest using the provided LDD (.md) file when working with an LLM to ensure markdown format acceptable to Patcher. You can alternatively make sure the AIA you are using provides exact find and replace code blocks using this example markdown format. Please keep in mind fuzzy matching isn't supported here yet, so the code blocks it provides must be entirely unabbreviated:</p>
-            
-        
-        <pre style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; overflow-x: auto; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.4; margin: 1rem 0;">Patch 1/2
+        <div class="modal-content">
+            <div class="modal-section">
+                <h3>1. Overview</h3>
+                <p style="margin: 0;">Patcher applies exact character find-and-replace blocks from LLM markdown into your project file. Paste the AI's entire markdown response into the center box—conversational filler before and after patches is automatically ignored.</p>
+            </div>
+
+            <div class="modal-section">
+                <h3>2. Markdown Patch Syntax</h3>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Your LLM should follow either format without abbreviations or truncation:</p>
+                
+                <strong>Standard Patch (Local edits):</strong>
+                <pre class="code-preview">Patch 1/2
 Find
 &#96;&#96;&#96;html
-Old code here
-&lt;/div&gt;
+&lt;div class="header"&gt;Old Code&lt;/div&gt;
 &#96;&#96;&#96;
-Replace with 
+Replace with
 &#96;&#96;&#96;html
-New code here 
-&#96;&#96;&#96;
+&lt;div class="header"&gt;New Code&lt;/div&gt;
+&#96;&#96;&#96;</pre>
 
-Patch 2/2
-Find
-&#96;&#96;&#96;html
-&lt;p&gt; hello world&lt;/p&gt;
-&lt;/div&gt;
-&#96;&#96;&#96;
-Replace with 
-&#96;&#96;&#96;html
-&lt;p&gt; hello again world&lt;/p&gt; 
-&#96;&#96;&#96;
-</pre>
-
-            <p><strong>Range Patches (New in v0.0.10):</strong> Instead of sending large code blocks to change a few lines, LLMs can target spatial anchors with <code>Find start</code> and <code>Find end</code>:</p>
-            <pre style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; overflow-x: auto; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.4; margin: 1rem 0;">Patch 1/1
+                <strong>Range Patch (Multi-line / Large refactors):</strong>
+                <pre class="code-preview">Patch 2/2
 Find start
-&#96;&#96;&#96;html
-&lt;div class="container"&gt;
+&#96;&#96;&#96;javascript
+function init() {
 &#96;&#96;&#96;
 Find end
-&#96;&#96;&#96;html
-&lt;/main&gt;
+&#96;&#96;&#96;javascript
+    ready = true;
+}
 &#96;&#96;&#96;
-Replace with 
-&#96;&#96;&#96;html
-&lt;div class="container"&gt;
-    &lt;p&gt;Replaced using anchor range!&lt;/p&gt;
-&lt;/main&gt;
-&#96;&#96;&#96;
-</pre>
+Replace with
+&#96;&#96;&#96;javascript
+function init() {
+    setupEngine();
+    ready = true;
+}
+&#96;&#96;&#96;</pre>
+            </div>
 
-            <p>2) When ready, upload your current file that needs the patches applied (index.html, etc)</p>
-            <p>3) Use the button or manual textbox to paste your LLM's entire response that includes the markdown find and replace blocks. You don't need to erase the intro, outro, or other filler texts since Patcher uses regex to look just at the targeted markdown code blocks.</p>
-            <p>4) Patcher will immediately tell you which patches went through right, and let you download the new file with all successful patches.</p>
-            <p>5) Unsuccessful patches are individually skipped; tapping or clicking on them should highlight where the markdown code struggled to find a find block etc.</p>
-            <p>6) Feel free to view this website's code directly on GitHub.com/spamfan/patcher to modify to your own uses!! :) If you're new to vibe coding or don't feel like you have a comfortable vibe coding LLM setup, I recommend also seeing my AI Studio vibe coding recommendations.</p>
-        </div>
-    </dialog>
+            <div class="modal-section">
+                <h3>3. LDD Template</h3>
+                <p style="margin: 0;">Provide your AI with an LDD rulebook to ensure strict adherence to formatting:</p>
+                <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                    <button id="btn-download-ldd" class="modal-chip-link">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+                        Download latest LDD template
+                    </button>
+                    <a href="https://spamfan.github.io/mdviewer" target="_blank" rel="noopener noreferrer" class="modal-chip-link" style="background: var(--border-color); color: var(--text-main);">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                        Open MDViewer
+                    </a>
+                </div>
+            </div>
 
-    <!-- LLM Workflow Modal -->
-    <dialog id="modal-workflow">
-        <div class="modal-header">
-            <h2>Suggested LLM workflow and resources</h2>
-            <button class="close-modal-btn" style="width: auto; padding: 0.5rem 1rem; background: var(--border-color); color: var(--text-main);">Close</button>
-        </div>
-        <div style="overflow-y: auto; padding-right: 1rem; line-height: 1.6;">
-            <p><strong>NOTE:</strong> I don't really know much of vibe coding but this is a flow that has worked well for me. While you could probably utilize this for other LLMs, this guide is especially tailored for using Gemini pro via AI studio.</p>
-            
-            <details class="accordion">
-                <summary>Why is low token count important?</summary>
-                <p>Keeping the context tokens in a chat as low as possible gives LLMs more clarity, speed, and less hallucinations.</p>
-                <p>Example: user makes an app, has an entire 8 messages between themselves and the AIA on modifying the app to support dark mode. The user follows through then realizes they don't want dark mode. It is incredibly more efficient for the user and LLM to delete these 8 messages rather than "modifying" the file again to get back to its starting point. Anytime the LLM is talked to, it has to re-read the entire conversation and restructure the initial html with all patches. This is why rebranching and deleting irrelevant pieces is highly important. I find the most efficiency as only using one AI agent for one version change most the time, then rebranching when working on more features.</p>
-            </details>
-
-            <ol>
-                <li>I recommend starting a new AI studio conversation with the latest available free (DO NOT ATTACH CARD) pro model such as Gemini 3.1 pro etc. I recommend using these settings:
-                    <ul>
-                        <li>Temperature: 0.8</li>
-                        <li>URL context; on</li>
-                        <li>Grounding with Google search: on</li>
-                        <li>Grounding with Google maps: only turn this on if the project you're working on uses realtime map information (rare)</li>
-                        <li>Code execution: on (turn this on as a last priority if it lets you, if it doesn't I won't worry about it, the others are more important imo.)</li>
-                        <li>Top p limit, output length, etc: these and any other settings are usually fine to leave on default.</li>
-                    </ul>
-                </li>
-                <li>In the new prompt, I recommend uploading the attached LDD (.md) file or your own version. (Once a project becomes large enough I add more sections to the LDD for my specific project/ecosystem)</li>
-                <li>If you have important project files the AIA should know, such as an HTML codebase etc I recommend uploading that now with the LDD.</li>
-                <li>You can usually leave your introduction blank and just let it read the attachments and run.</li>
-                <li>If you're making a new application, I suggest letting it eventually create the codebase for you. I suggest all subsequent changes use find and replace blocks.</li>
-                <li>Once enough changes have been made, anywhere between 1-10 individual sets of patches, and/or when context tokens = 100-150k, I highly recommend "rebranching" the chat.</li>
-                <li>To rebranch, simply scroll to the top of the chat where the LDD and index were uploaded (incl your intro if wanted.). Click more options>branch from here.</li>
-                <li>In the branched off chat, double check the settings are how you wanted them. Delete and reupload any updated media, such as your LDD if you have a newer one, or (more likely) your newest codebase versions (most current index.html etc etc)</li>
-                <li>If a conversation with AI Studio takes a detour, or any other chunk of conversation ends up becoming irrelevant (example: your discussion with an AI regarding potential code solutions you chose not to pursue, conversational errors on either individual parts etc etc), it's highly recommended to delete that part of the conversation and correct it if applicable. This keeps context limits down.</li>
-                <li>When the AI is onto the patches phase, simply click its entire response > more options > Copy as markdown, and paste its whole response into Patcher. Upload your codebase needing patches to Patcher and download the output if successful.</li>
-            </ol>
+            <div class="modal-section">
+                <h3>4. Recommended AI Setup (AI Studio)</h3>
+                <ul style="margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                    <li><strong>Model:</strong> Gemini 3.8 Flash</li>
+                    <li><strong>Thinking Level:</strong> High</li>
+                    <li><strong>Grounding:</strong> Google Search (On), URL context (On), Google Maps (Off unless needed)</li>
+                    <li><strong>Defaults:</strong> Temperature, top-p, and output limits default.</li>
+                    <li><strong>Context Management:</strong> Branch off and delete irrelevant conversation chunks when context reaches ~100k tokens.</li>
+                </ul>
+            </div>
         </div>
     </dialog>
 
     <script>
+        // --- SVG Icon Assets ---
+        const ICONS = {
+            sun: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>',
+            moon: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>',
+            check: '<svg class="icon icon-sm text-green" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>',
+            alert: '<svg class="icon icon-sm text-red" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>',
+            info: '<svg class="icon icon-sm text-gray" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>'
+        };
+
         // --- DOM Elements ---
         const uploadBtn = document.getElementById('upload-btn');
         const fileInput = document.getElementById('file-input');
         const fileInfo = document.getElementById('file-info');
+        const clearFileBtn = document.getElementById('clear-file-btn');
         
         const inputSkeleton = document.getElementById('input-skeleton');
         const inputPreview = document.getElementById('input-preview');
+        const moduleInput = document.getElementById('module-input');
         
         const clipboardBtn = document.getElementById('clipboard-btn');
+        const clearInstructionsBtn = document.getElementById('clear-instructions-btn');
         const statusList = document.getElementById('status-list');
-        const rawPreviewContainer = document.getElementById('raw-preview-container');
-        const rawPreview = document.getElementById('raw-preview');
+        const instructionsInput = document.getElementById('instructions-input');
+        const engineSkeleton = document.getElementById('engine-skeleton');
         
         const outputSkeleton = document.getElementById('output-skeleton');
         const outputPreview = document.getElementById('output-preview');
@@ -604,23 +665,13 @@ Replace with
         const outputActionsContainer = document.getElementById('output-actions-container');
 
         const btnHowTo = document.getElementById('btn-how-to');
-        const btnWorkflow = document.getElementById('btn-workflow');
         const btnDownloadLdd = document.getElementById('btn-download-ldd');
         const themeToggle = document.getElementById('theme-toggle');
-        const resetAllBtn = document.getElementById('reset-all-btn');
-        const modalReset = document.getElementById('modal-reset');
-        const confirmResetBtn = document.getElementById('confirm-reset-btn');
-        const clearFileBtn = document.getElementById('clear-file-btn');
-        const clearInstructionsBtn = document.getElementById('clear-instructions-btn');
-        const moduleInput = document.getElementById('module-input');
-        const instructionsInput = document.getElementById('instructions-input');
-        const engineSkeleton = document.getElementById('engine-skeleton');
         const modalHowTo = document.getElementById('modal-how-to');
-        const modalWorkflow = document.getElementById('modal-workflow');
         const allDialogs = document.querySelectorAll('dialog');
         const allCloseBtns = document.querySelectorAll('.close-modal-btn');
 
-        // --- State Management ---
+        // --- Stateless Runtime Variables ---
         let sourceFileContent = "";
         let originalFileName = "";
         let originalFileExtension = "";
@@ -629,43 +680,29 @@ Replace with
         let failedPatchesMap = {};
         let debounceTimer;
 
-        // --- Local Storage Persistence ---
-        function saveState() {
-            localStorage.setItem('patcher_sourceFile', sourceFileContent);
-            localStorage.setItem('patcher_fileName', originalFileName);
-            localStorage.setItem('patcher_fileExt', originalFileExtension);
-            localStorage.setItem('patcher_instructions', instructionsInput.value);
-            localStorage.setItem('patcher_theme', document.documentElement.getAttribute('data-theme') || 'light');
-        }
-
-        function loadState() {
-            const savedTheme = localStorage.getItem('patcher_theme');
-            if (savedTheme === 'dark') {
+        // --- System Theme Initialization ---
+        function initTheme() {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (prefersDark) {
                 document.documentElement.setAttribute('data-theme', 'dark');
-                themeToggle.textContent = '☀️';
-            }
-
-            sourceFileContent = localStorage.getItem('patcher_sourceFile') || "";
-            originalFileName = localStorage.getItem('patcher_fileName') || "";
-            originalFileExtension = localStorage.getItem('patcher_fileExt') || "";
-            const savedInstructions = localStorage.getItem('patcher_instructions') || "";
-
-            if (sourceFileContent) {
-                fileInfo.textContent = originalFileName;
-                clearFileBtn.classList.remove('hidden');
-                renderInputPreview();
-            }
-
-            if (savedInstructions) {
-                instructionsInput.value = savedInstructions;
-                clearInstructionsBtn.classList.remove('hidden');
-                if (sourceFileContent) {
-                    processInstructions(savedInstructions);
-                }
+                themeToggle.innerHTML = ICONS.sun;
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                themeToggle.innerHTML = ICONS.moon;
             }
         }
+        initTheme();
 
-        document.addEventListener('DOMContentLoaded', loadState);
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.documentElement.removeAttribute('data-theme');
+                themeToggle.innerHTML = ICONS.moon;
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeToggle.innerHTML = ICONS.sun;
+            }
+        });
 
         // --- File Ingestion ---
         uploadBtn.addEventListener('click', () => fileInput.click());
@@ -681,7 +718,6 @@ Replace with
             uploadBtn.textContent = "Upload different file";
             fileInfo.textContent = originalFileName;
             
-            // Show loading state
             inputPreview.classList.add('hidden');
             inputSkeleton.textContent = "Loading...";
             inputSkeleton.classList.remove('hidden');
@@ -690,10 +726,8 @@ Replace with
             reader.onload = (e) => {
                 sourceFileContent = e.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
                 clearFileBtn.classList.remove('hidden');
-                saveState();
                 renderInputPreview();
 
-                // Reset outputs
                 outputActionsContainer.classList.add('hidden');
                 outputPreview.classList.add('hidden');
                 outputSkeleton.textContent = "Awaiting Patch...";
@@ -702,7 +736,7 @@ Replace with
                 if (instructionsInput.value.trim()) {
                     processInstructions(instructionsInput.value);
                 } else {
-                    statusList.innerHTML = '<div class="text-gray">✔️ ready for markdown</div>';
+                    statusList.innerHTML = `<div class="status-item text-gray">${ICONS.info}<span>ready for markdown</span></div>`;
                 }
             };
             reader.readAsText(file);
@@ -744,25 +778,27 @@ Replace with
             }
         });
 
-        // --- Modal & UI Flow ---
-        
+        // --- Modal Interactions ---
         btnHowTo.addEventListener('click', () => modalHowTo.showModal());
-        btnWorkflow.addEventListener('click', () => modalWorkflow.showModal());
         
-        themeToggle.addEventListener('click', () => {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-            themeToggle.textContent = isDark ? '🌙' : '☀️';
-            saveState();
+        allCloseBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.target.closest('dialog').close();
+            });
         });
 
-        resetAllBtn.addEventListener('click', () => modalReset.showModal());
-
-        confirmResetBtn.addEventListener('click', () => {
-            localStorage.clear();
-            location.reload();
+        allDialogs.forEach(dialog => {
+            dialog.addEventListener('click', (e) => {
+                const rect = dialog.getBoundingClientRect();
+                const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
+                                    rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+                if (!isInDialog) {
+                    dialog.close();
+                }
+            });
         });
 
+        // --- Clear Actions ---
         clearFileBtn.addEventListener('click', () => {
             sourceFileContent = "";
             originalFileName = "";
@@ -777,23 +813,22 @@ Replace with
             outputPreview.classList.add('hidden');
             outputSkeleton.textContent = "Awaiting Patch...";
             outputSkeleton.classList.remove('hidden');
-            saveState();
         });
 
         clearInstructionsBtn.addEventListener('click', () => {
             instructionsInput.value = "";
             clearInstructionsBtn.classList.add('hidden');
-            statusList.innerHTML = '<div class="text-gray">✔️ no input</div>';
+            statusList.innerHTML = `<div class="status-item text-gray">${ICONS.info}<span>no input</span></div>`;
             outputActionsContainer.classList.add('hidden');
             outputPreview.classList.add('hidden');
             outputSkeleton.textContent = "Awaiting Patch...";
             outputSkeleton.classList.remove('hidden');
-            saveState();
         });
 
+        // --- GitHub LDD Fetcher ---
         btnDownloadLdd.addEventListener('click', async () => {
-            const originalText = btnDownloadLdd.textContent;
-            btnDownloadLdd.innerHTML = '<div class="spinner" style="width: 1rem; height: 1rem; border-width: 2px;"></div> Fetching...';
+            const originalHTML = btnDownloadLdd.innerHTML;
+            btnDownloadLdd.innerHTML = '<div class="spinner" style="width: 0.9rem; height: 0.9rem; border-width: 2px;"></div> Fetching...';
             btnDownloadLdd.disabled = true;
             
             try {
@@ -834,33 +869,17 @@ Replace with
             } catch (err) {
                 alert('Error fetching LDD: ' + err.message);
             } finally {
-                btnDownloadLdd.textContent = originalText;
+                btnDownloadLdd.innerHTML = originalHTML;
                 btnDownloadLdd.disabled = false;
             }
-        });
-        
-        allCloseBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.target.closest('dialog').close();
-            });
-        });
-
-        allDialogs.forEach(dialog => {
-            dialog.addEventListener('click', (e) => {
-                const rect = dialog.getBoundingClientRect();
-                const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
-                                    rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
-                if (!isInDialog) {
-                    dialog.close();
-                }
-            });
         });
 
         // --- Error Link Routing ---
         statusList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('error-link')) {
+            const errorLink = e.target.closest('.error-link');
+            if (errorLink) {
                 e.preventDefault();
-                const patchId = e.target.getAttribute('data-patch');
+                const patchId = errorLink.getAttribute('data-patch');
                 const findString = failedPatchesMap[patchId];
                 if (findString && currentInstructions) {
                     const start = currentInstructions.indexOf(findString);
@@ -877,11 +896,10 @@ Replace with
         instructionsInput.addEventListener('input', () => {
             const text = instructionsInput.value;
             clearInstructionsBtn.classList.toggle('hidden', text.trim() === '');
-            saveState();
             
             clearTimeout(debounceTimer);
             if (!text.trim()) {
-                statusList.innerHTML = '<div class="text-gray">✔️ no input</div>';
+                statusList.innerHTML = `<div class="status-item text-gray">${ICONS.info}<span>no input</span></div>`;
                 return;
             }
             
@@ -889,35 +907,33 @@ Replace with
                 if (sourceFileContent) {
                     processInstructions(text);
                 } else {
-                    statusList.innerHTML = '<div class="text-gray">✔️ Markdown ready. Awaiting file upload...</div>';
+                    statusList.innerHTML = `<div class="status-item text-gray">${ICONS.info}<span>Markdown ready. Awaiting file upload...</span></div>`;
                 }
             }, 500);
         });
 
-        // --- Clipboard Flow (Option A) ---
+        // --- Clipboard Flow ---
         clipboardBtn.addEventListener('click', async () => {
             if (isProcessing) return;
 
             try {
                 const text = await navigator.clipboard.readText();
                 if (!text.trim()) {
-                    statusList.innerHTML = '<div class="text-red">❗ Clipboard is empty</div>';
+                    statusList.innerHTML = `<div class="status-item text-red">${ICONS.alert}<span>Clipboard is empty</span></div>`;
                     return;
                 }
                 
                 instructionsInput.value = text;
                 clearInstructionsBtn.classList.remove('hidden');
-                saveState();
 
                 if (!sourceFileContent) {
                     currentInstructions = text;
-                    statusList.innerHTML = '<div class="text-gray">✔️ Markdown ready. Awaiting file upload...</div>';
+                    statusList.innerHTML = `<div class="status-item text-gray">${ICONS.info}<span>Markdown ready. Awaiting file upload...</span></div>`;
                 } else {
                     processInstructions(text);
                 }
             } catch (err) {
-                // Fallback if clipboard API blocked
-                statusList.innerHTML = '<div class="text-red">❗ Auto-paste blocked. Tap box below and paste manually.</div>';
+                statusList.innerHTML = `<div class="status-item text-red">${ICONS.alert}<span>Auto-paste blocked. Paste manually below.</span></div>`;
                 instructionsInput.focus();
             }
         });
@@ -928,24 +944,21 @@ Replace with
             currentInstructions = instructions;
             failedPatchesMap = {};
             
-            // Update UI to Processing State
             engineSkeleton.classList.remove('hidden');
-            statusList.innerHTML = '<div class="text-gray"><div class="spinner"></div> Reading clipboard...</div>';
+            statusList.innerHTML = `<div class="status-item text-gray"><div class="spinner"></div><span>Reading clipboard...</span></div>`;
             
             setTimeout(() => {
-                statusList.innerHTML = '<div class="text-gray"><div class="spinner"></div> Parsing AI instructions...</div>';
+                statusList.innerHTML = `<div class="status-item text-gray"><div class="spinner"></div><span>Parsing AI instructions...</span></div>`;
                 
                 setTimeout(() => {
                     executePatches(instructions);
-                }, 400); // Artificial delay for effect
+                }, 400);
             }, 300);
         }
 
         function executePatches(instructions) {
             const normalizedInstructions = instructions.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
             
-            // Dual-mode regex: matches Range patches (Find start ... Find end) and Standard patches (Find ...)
-            // Uses \x60 to match 3+ backticks while avoiding delimiter collisions in markdown tools
             const b = '\\x60{3,}';
             const rangePattern = 'Find\\s+start\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\1\\s*Find\\s+end\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\3\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\5';
             const standardPattern = 'Find(?!\\s+start)\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\7\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\9';
@@ -956,7 +969,6 @@ Replace with
             
             while ((match = combinedRegex.exec(normalizedInstructions)) !== null) {
                 if (match[2] !== undefined) {
-                    // Range mode: match[2]=startBlock, match[4]=endBlock, match[6]=replaceBlock
                     let startBlock = match[2];
                     let endBlock = match[4];
                     let replaceBlock = match[6];
@@ -965,7 +977,6 @@ Replace with
                     if (replaceBlock.endsWith('\n')) replaceBlock = replaceBlock.slice(0, -1);
                     patches.push({ type: 'range', findStart: startBlock, findEnd: endBlock, replace: replaceBlock });
                 } else {
-                    // Standard mode: match[8]=findBlock, match[10]=replaceBlock
                     let findBlock = match[8];
                     let replaceBlock = match[10];
                     if (findBlock.endsWith('\n')) findBlock = findBlock.slice(0, -1);
@@ -974,11 +985,11 @@ Replace with
                 }
             }
 
-            statusList.innerHTML = ''; // Clear status list
+            statusList.innerHTML = '';
             engineSkeleton.classList.add('hidden');
 
             if (patches.length === 0) {
-                statusList.innerHTML = '<div class="text-red">❗ No valid Find/Replace blocks found</div>';
+                statusList.innerHTML = `<div class="status-item text-red">${ICONS.alert}<span>No valid Find/Replace blocks found</span></div>`;
                 isProcessing = false;
                 return;
             }
@@ -994,34 +1005,33 @@ Replace with
                 if (patch.type === 'standard') {
                     if (patchedContent.includes(patch.find)) {
                         patchedContent = patchedContent.replace(patch.find, patch.replace);
-                        statusList.innerHTML += `<div>✅ patch ${patchCount} applied (exact)</div>`;
+                        statusList.innerHTML += `<div class="status-item text-green">${ICONS.check}<span>patch ${patchCount} applied (exact)</span></div>`;
                         successCount++;
                     } else {
                         failedPatchesMap[patchCount] = patch.find;
-                        statusList.innerHTML += `<a href="#" class="error-link text-red" data-patch="${patchCount}" style="display:block; text-decoration:none; margin-top:0.25rem;">❗ patch ${patchCount} not found (click to locate)</a>`;
+                        statusList.innerHTML += `<a href="#" class="error-link status-item text-red" data-patch="${patchCount}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchCount} not found (click to locate)</span></a>`;
                     }
                 } else if (patch.type === 'range') {
                     const startIndex = patchedContent.indexOf(patch.findStart);
                     if (startIndex === -1) {
                         failedPatchesMap[patchCount] = patch.findStart;
-                        statusList.innerHTML += `<a href="#" class="error-link text-red" data-patch="${patchCount}" style="display:block; text-decoration:none; margin-top:0.25rem;">❗ patch ${patchCount} start anchor not found (click to locate)</a>`;
+                        statusList.innerHTML += `<a href="#" class="error-link status-item text-red" data-patch="${patchCount}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchCount} start anchor not found (click to locate)</span></a>`;
                     } else {
                         const searchAfter = startIndex + patch.findStart.length;
                         const endIndex = patchedContent.indexOf(patch.findEnd, searchAfter);
                         if (endIndex === -1) {
                             failedPatchesMap[patchCount] = patch.findEnd;
-                            statusList.innerHTML += `<a href="#" class="error-link text-red" data-patch="${patchCount}" style="display:block; text-decoration:none; margin-top:0.25rem;">❗ patch ${patchCount} end anchor not found after start (click to locate)</a>`;
+                            statusList.innerHTML += `<a href="#" class="error-link status-item text-red" data-patch="${patchCount}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchCount} end anchor not found after start (click to locate)</span></a>`;
                         } else {
                             const fullEnd = endIndex + patch.findEnd.length;
                             patchedContent = patchedContent.slice(0, startIndex) + patch.replace + patchedContent.slice(fullEnd);
-                            statusList.innerHTML += `<div>✅ patch ${patchCount} applied (range)</div>`;
+                            statusList.innerHTML += `<div class="status-item text-green">${ICONS.check}<span>patch ${patchCount} applied (range)</span></div>`;
                             successCount++;
                         }
                     }
                 }
             }
 
-            // Output Generation
             if (successCount > 0) {
                 outputSkeleton.textContent = "Rendering...";
                 
@@ -1035,7 +1045,6 @@ Replace with
                     outputPreview.classList.remove('hidden');
                     outputSkeleton.classList.add('hidden');
                     
-                    // Generate Download
                     const nameWithoutExt = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
                     const newFileName = `${nameWithoutExt}_patched.${originalFileExtension}`;
                     
@@ -1044,7 +1053,6 @@ Replace with
                     downloadBtn.download = newFileName;
                     outputActionsContainer.classList.remove('hidden');
 
-                    // Bind Copy button
                     copyOutputBtn.onclick = async () => {
                         try {
                             await navigator.clipboard.writeText(patchedContent);
