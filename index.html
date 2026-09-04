@@ -159,8 +159,27 @@
 
         .output-actions {
             display: flex;
-            gap: 0.75rem;
+            flex-direction: column;
+            gap: 0.65rem;
             width: 100%;
+        }
+
+        .filename-input {
+            background: var(--bg-main);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-pill);
+            padding: 0.55rem 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            width: 100%;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .filename-input:focus {
+            border-color: var(--accent-color);
         }
 
         #instructions-input {
@@ -480,7 +499,7 @@
 
     <header>
         <div class="header-controls">
-            <h1>Patcher <span class="version-badge">v0.2.0</span></h1>
+            <h1>Patcher <span class="version-badge">v0.1.9</span></h1>
             <div class="header-buttons">
                 <button id="theme-toggle" class="btn-icon" title="Toggle Theme" aria-label="Toggle Theme">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
@@ -544,8 +563,11 @@
         <div class="module">
             <div class="action-area">
                 <div class="output-actions hidden" id="output-actions-container">
-                    <a id="download-btn" class="download-btn">Download</a>
-                    <button id="copy-output-btn" class="btn-secondary" style="width: auto;">Copy</button>
+                    <input type="text" id="output-filename-input" class="filename-input" placeholder="filename.ext" spellcheck="false" title="Download filename">
+                    <div style="display: flex; gap: 0.75rem; width: 100%;">
+                        <button id="download-btn" class="download-btn">Download</button>
+                        <button id="copy-output-btn" class="btn-secondary" style="width: auto;">Copy</button>
+                    </div>
                 </div>
             </div>
             <div class="preview-container">
@@ -663,6 +685,7 @@ function init() {
         const downloadBtn = document.getElementById('download-btn');
         const copyOutputBtn = document.getElementById('copy-output-btn');
         const outputActionsContainer = document.getElementById('output-actions-container');
+        const outputFilenameInput = document.getElementById('output-filename-input');
 
         const btnHowTo = document.getElementById('btn-how-to');
         const btnDownloadLdd = document.getElementById('btn-download-ldd');
@@ -679,11 +702,13 @@ function init() {
         let currentInstructions = "";
         let failedPatchesMap = {};
         let debounceTimer;
+        let lastPatchedContent = "";
 
-        // --- System Theme Initialization ---
-        function initTheme() {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (prefersDark) {
+        // --- System Theme Initialization & Persistence ---
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function applyTheme(isDark) {
+            if (isDark) {
                 document.documentElement.setAttribute('data-theme', 'dark');
                 themeToggle.innerHTML = ICONS.sun;
             } else {
@@ -691,21 +716,49 @@ function init() {
                 themeToggle.innerHTML = ICONS.moon;
             }
         }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('patcher_theme');
+            if (savedTheme === 'dark') {
+                applyTheme(true);
+            } else if (savedTheme === 'light') {
+                applyTheme(false);
+            } else {
+                applyTheme(systemPrefersDark.matches);
+            }
+        }
         initTheme();
 
-        themeToggle.addEventListener('click', () => {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            if (isDark) {
-                document.documentElement.removeAttribute('data-theme');
-                themeToggle.innerHTML = ICONS.moon;
-            } else {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                themeToggle.innerHTML = ICONS.sun;
+        systemPrefersDark.addEventListener('change', (e) => {
+            if (!localStorage.getItem('patcher_theme')) {
+                applyTheme(e.matches);
             }
         });
 
-        // --- File Ingestion ---
-        uploadBtn.addEventListener('click', () => fileInput.click());
+        themeToggle.addEventListener('click', () => {
+            const isCurrentlyDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isCurrentlyDark ? 'light' : 'dark';
+            applyTheme(!isCurrentlyDark);
+            localStorage.setItem('patcher_theme', newTheme);
+        });
+
+        // --- File Ingestion & Auto-Paste ---
+        uploadBtn.addEventListener('click', async () => {
+            if (!instructionsInput.value.trim() && navigator.clipboard && navigator.clipboard.readText) {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    if (text.trim()) {
+                        instructionsInput.value = text;
+                        currentInstructions = text;
+                        clearInstructionsBtn.classList.remove('hidden');
+                        statusList.innerHTML = `<div class="status-item text-green">${ICONS.check}<span>Auto-pasted from clipboard</span></div>`;
+                    }
+                } catch (_) {
+                    // Clipboard access denied or blocked - proceed silently
+                }
+            }
+            fileInput.click();
+        });
         
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -813,6 +866,8 @@ function init() {
             outputPreview.classList.add('hidden');
             outputSkeleton.textContent = "Awaiting Patch...";
             outputSkeleton.classList.remove('hidden');
+            outputFilenameInput.value = "";
+            lastPatchedContent = "";
         });
 
         clearInstructionsBtn.addEventListener('click', () => {
@@ -823,6 +878,8 @@ function init() {
             outputPreview.classList.add('hidden');
             outputSkeleton.textContent = "Awaiting Patch...";
             outputSkeleton.classList.remove('hidden');
+            outputFilenameInput.value = "";
+            lastPatchedContent = "";
         });
 
         // --- GitHub LDD Fetcher ---
@@ -1034,6 +1091,7 @@ function init() {
 
             if (successCount > 0) {
                 outputSkeleton.textContent = "Rendering...";
+                lastPatchedContent = patchedContent;
                 
                 setTimeout(() => {
                     if (originalFileExtension.toLowerCase() === 'html') {
@@ -1045,17 +1103,40 @@ function init() {
                     outputPreview.classList.remove('hidden');
                     outputSkeleton.classList.add('hidden');
                     
-                    const nameWithoutExt = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
-                    const newFileName = `${nameWithoutExt}_patched.${originalFileExtension}`;
-                    
-                    const blob = new Blob([patchedContent], { type: 'text/plain' });
-                    downloadBtn.href = URL.createObjectURL(blob);
-                    downloadBtn.download = newFileName;
+                    outputFilenameInput.value = originalFileName || 'index.html';
                     outputActionsContainer.classList.remove('hidden');
+
+                    downloadBtn.onclick = async () => {
+                        const filename = outputFilenameInput.value.trim() || originalFileName || 'index.html';
+                        const mimeType = originalFileExtension.toLowerCase() === 'html' ? 'text/html' : 'text/plain';
+                        const blob = new Blob([lastPatchedContent], { type: mimeType });
+
+                        const file = new File([blob], filename, { type: mimeType });
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            try {
+                                await navigator.share({
+                                    files: [file],
+                                    title: filename
+                                });
+                                return;
+                            } catch (err) {
+                                if (err.name === 'AbortError') return;
+                            }
+                        }
+
+                        const url = URL.createObjectURL(blob);
+                        const tempLink = document.createElement('a');
+                        tempLink.href = url;
+                        tempLink.download = filename;
+                        document.body.appendChild(tempLink);
+                        tempLink.click();
+                        document.body.removeChild(tempLink);
+                        URL.revokeObjectURL(url);
+                    };
 
                     copyOutputBtn.onclick = async () => {
                         try {
-                            await navigator.clipboard.writeText(patchedContent);
+                            await navigator.clipboard.writeText(lastPatchedContent);
                             const origText = copyOutputBtn.textContent;
                             copyOutputBtn.textContent = "Copied!";
                             setTimeout(() => copyOutputBtn.textContent = origText, 2000);
