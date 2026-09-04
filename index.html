@@ -409,7 +409,7 @@
 
     <header>
         <div class="header-controls">
-            <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.0.10</span></h1>
+            <h1>Patcher <span style="font-size: 0.5em; color: var(--text-muted); vertical-align: middle;">v0.1.1</span></h1>
             <div class="header-buttons">
                 <button id="theme-toggle" class="btn-icon" title="Toggle Dark Mode">🌙</button>
                 <button id="reset-all-btn" class="btn-icon btn-danger" title="Reset All">🗑️ Reset</button>
@@ -948,7 +948,7 @@ Replace with
             // Uses \x60 to match 3+ backticks while avoiding delimiter collisions in markdown tools
             const b = '\\x60{3,}';
             const rangePattern = 'Find\\s+start\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\1\\s*Find\\s+end\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\3\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\5';
-            const standardPattern = 'Find(?!\\s+start)\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\1\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\3';
+            const standardPattern = 'Find(?!\\s+start)\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\7\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\9';
             const combinedRegex = new RegExp('(?:' + rangePattern + ')|(?:' + standardPattern + ')', 'gi');
 
             const patches = [];
