@@ -499,7 +499,7 @@
 
     <header>
         <div class="header-controls">
-            <h1>Patcher <span class="version-badge">v0.1.10</span></h1>
+            <h1>Patcher <span class="version-badge">v0.1.11</span></h1>
             <div class="header-buttons">
                 <button id="theme-toggle" class="btn-icon" title="Toggle Theme" aria-label="Toggle Theme">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
@@ -1106,12 +1106,26 @@ function init() {
                     outputFilenameInput.value = originalFileName || 'index.html';
                     outputActionsContainer.classList.remove('hidden');
 
-                    downloadBtn.onclick = () => {
+                    downloadBtn.onclick = async () => {
                         const filename = outputFilenameInput.value.trim() || originalFileName || 'index.html';
                         const ext = filename.includes('.') ? filename.split('.').pop().toLowerCase() : '';
                         const mimeType = (ext === 'html' || ext === 'htm') ? 'text/html;charset=utf-8' : 'text/plain;charset=utf-8';
-                        const blob = new Blob([lastPatchedContent], { type: mimeType });
 
+                        if ('showSaveFilePicker' in window) {
+                            try {
+                                const handle = await window.showSaveFilePicker({
+                                    suggestedName: filename
+                                });
+                                const writable = await handle.createWritable();
+                                await writable.write(lastPatchedContent);
+                                await writable.close();
+                                return;
+                            } catch (err) {
+                                if (err.name === 'AbortError') return;
+                            }
+                        }
+
+                        const blob = new Blob([lastPatchedContent], { type: mimeType });
                         const url = URL.createObjectURL(blob);
                         const tempLink = document.createElement('a');
                         tempLink.href = url;
