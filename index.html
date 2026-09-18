@@ -556,7 +556,7 @@
 
     <header>
         <div class="header-controls">
-            <h1>Patcher <span class="version-badge">v0.2.0</span></h1>
+            <h1>Patcher <span class="version-badge">v0.2.1</span></h1>
             <div class="header-buttons">
                 <button id="theme-toggle" class="btn-icon" title="Toggle Theme" aria-label="Toggle Theme">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
@@ -1340,17 +1340,31 @@ function init() {
         function executePatches(instructions) {
             const normalized = instructions.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
+            const b = '\\x60{3,}';
+            const rangePattern = 'Find\\s+start\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\1\\s*Find\\s+end\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\3\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\5';
+            const standardPattern = 'Find(?!\\s+start)\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\7\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\9';
+            const patchFinder = new RegExp('(?:' + rangePattern + ')|(?:' + standardPattern + ')', 'gi');
+
+            const patchSpans = [];
+            let pSpan;
+            while ((pSpan = patchFinder.exec(normalized)) !== null) {
+                patchSpans.push({ start: pSpan.index, end: pSpan.index + pSpan[0].length });
+            }
+
             const headerRegex = /(?:^|\n)#{1,6}\s*(?:TARGET\s+)?FILE:\s*[`*~_]*([^\n`*~_]+)[`*~_]*/gi;
             const sections = [];
             const headerMatches = [];
             let hMatch;
 
             while ((hMatch = headerRegex.exec(normalized)) !== null) {
-                headerMatches.push({
-                    index: hMatch.index,
-                    rawLength: hMatch[0].length,
-                    target: hMatch[1].trim()
-                });
+                const isInsidePatch = patchSpans.some(s => hMatch.index >= s.start && hMatch.index < s.end);
+                if (!isInsidePatch) {
+                    headerMatches.push({
+                        index: hMatch.index,
+                        rawLength: hMatch[0].length,
+                        target: hMatch[1].trim()
+                    });
+                }
             }
 
             if (headerMatches.length === 0) {
@@ -1359,6 +1373,12 @@ function init() {
                     contentSlice: normalized
                 });
             } else {
+                if (headerMatches[0].index > 0) {
+                    sections.push({
+                        target: filesState[activeFileIndex] ? filesState[activeFileIndex].name : '',
+                        contentSlice: normalized.slice(0, headerMatches[0].index)
+                    });
+                }
                 for (let i = 0; i < headerMatches.length; i++) {
                     const start = headerMatches[i].index + headerMatches[i].rawLength;
                     const end = (i + 1 < headerMatches.length) ? headerMatches[i + 1].index : normalized.length;
@@ -1368,10 +1388,6 @@ function init() {
                     });
                 }
             }
-
-            const b = '\\x60{3,}';
-            const rangePattern = 'Find\\s+start\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\1\\s*Find\\s+end\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\3\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\5';
-            const standardPattern = 'Find(?!\\s+start)\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\7\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\9';
 
             statusList.innerHTML = '';
             engineSkeleton.classList.add('hidden');
