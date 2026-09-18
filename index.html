@@ -479,6 +479,63 @@
             margin: 0.25rem 0;
         }
 
+        .file-tabs-bar {
+            display: flex;
+            gap: 0.35rem;
+            overflow-x: auto;
+            padding: 0.25rem 0;
+            margin-bottom: 0.25rem;
+            scrollbar-width: thin;
+        }
+
+        .file-tab-btn {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 0.3rem 0.75rem;
+            border-radius: var(--radius-pill);
+            font-size: 0.78rem;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            width: auto;
+        }
+
+        .file-tab-btn:hover {
+            border-color: var(--border-hover);
+            color: var(--text-main);
+        }
+
+        .file-tab-btn.active {
+            background: var(--accent-container);
+            color: var(--accent-container-text);
+            border-color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        .status-file-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            margin-top: 0.4rem;
+        }
+
+        .status-file-header {
+            font-size: 0.78rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text-main);
+            padding-bottom: 0.2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
         /* Responsive Layout - Mobile */
         @media (max-width: 768px) {
             body {
@@ -499,7 +556,7 @@
 
     <header>
         <div class="header-controls">
-            <h1>Patcher <span class="version-badge">v0.1.12</span></h1>
+            <h1>Patcher <span class="version-badge">v0.2.0</span></h1>
             <div class="header-buttons">
                 <button id="theme-toggle" class="btn-icon" title="Toggle Theme" aria-label="Toggle Theme">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
@@ -522,8 +579,8 @@
         <!-- Module 1: Input Zone -->
         <div class="module" id="module-input">
             <div class="action-area">
-                <button id="upload-btn">Upload file</button>
-                <input type="file" id="file-input" hidden>
+                <button id="upload-btn">Upload file(s)</button>
+                <input type="file" id="file-input" hidden multiple>
                 <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                     <div class="file-info" id="file-info">No file selected</div>
                     <button id="clear-file-btn" class="btn-mini-clear hidden" title="Clear File" aria-label="Clear File">
@@ -531,6 +588,7 @@
                     </button>
                 </div>
             </div>
+            <div class="file-tabs-bar hidden" id="input-file-tabs"></div>
             <div class="preview-container">
                 <div class="skeleton" id="input-skeleton">Awaiting File...</div>
                 <iframe id="input-preview" class="hidden" sandbox=""></iframe>
@@ -564,8 +622,9 @@
             <div class="action-area">
                 <div class="output-actions hidden" id="output-actions-container">
                     <input type="text" id="output-filename-input" class="filename-input" placeholder="filename.ext" spellcheck="false" title="Download filename">
-                    <div style="display: flex; gap: 0.75rem; width: 100%;">
-                        <button id="download-btn" class="download-btn">Download</button>
+                    <div style="display: flex; gap: 0.5rem; width: 100%; flex-wrap: wrap;">
+                        <button id="download-btn" class="download-btn" style="flex: 1 1 110px;">Download</button>
+                        <button id="download-zip-btn" class="btn-secondary hidden" style="flex: 1 1 110px; width: auto;">Download .zip</button>
                         <button id="copy-output-btn" class="btn-secondary" style="width: auto;">Copy</button>
                     </div>
                 </div>
@@ -574,6 +633,7 @@
                     <span>Test download function (dev)</span>
                 </label>
             </div>
+            <div class="file-tabs-bar hidden" id="output-file-tabs"></div>
             <div class="preview-container">
                 <div class="skeleton" id="output-skeleton">Awaiting Patch...</div>
                 <iframe id="output-preview" class="hidden" sandbox=""></iframe>
@@ -690,6 +750,9 @@ function init() {
         const copyOutputBtn = document.getElementById('copy-output-btn');
         const outputActionsContainer = document.getElementById('output-actions-container');
         const outputFilenameInput = document.getElementById('output-filename-input');
+        const downloadZipBtn = document.getElementById('download-zip-btn');
+        const inputFileTabs = document.getElementById('input-file-tabs');
+        const outputFileTabs = document.getElementById('output-file-tabs');
         const devTestLabel = document.getElementById('dev-test-label');
         const devTestToggle = document.getElementById('dev-test-toggle');
 
@@ -702,15 +765,13 @@ function init() {
         const allDialogs = document.querySelectorAll('dialog');
         const allCloseBtns = document.querySelectorAll('.close-modal-btn');
 
-        // --- Stateless Runtime Variables ---
-        let sourceFileContent = "";
-        let originalFileName = "";
-        let originalFileExtension = "";
+        // --- Stateless Runtime Variables & Multi-File State ---
+        let filesState = [];
+        let activeFileIndex = 0;
         let isProcessing = false;
         let currentInstructions = "";
         let failedPatchesMap = {};
         let debounceTimer;
-        let lastPatchedContent = "";
 
         // --- System Theme Initialization & Persistence ---
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
@@ -750,7 +811,7 @@ function init() {
             localStorage.setItem('patcher_theme', newTheme);
         });
 
-        // --- File Ingestion & Auto-Paste ---
+        // --- File Ingestion, Tabs & Auto-Paste ---
         uploadBtn.addEventListener('click', async () => {
             if (!instructionsInput.value.trim() && navigator.clipboard && navigator.clipboard.readText) {
                 try {
@@ -761,63 +822,119 @@ function init() {
                         clearInstructionsBtn.classList.remove('hidden');
                         statusList.innerHTML = `<div class="status-item text-green">${ICONS.check}<span>Auto-pasted from clipboard</span></div>`;
                     }
-                } catch (_) {
-                    // Clipboard access denied or blocked - proceed silently
-                }
+                } catch (_) {}
             }
             fileInput.click();
         });
-        
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            originalFileName = file.name;
-            const parts = originalFileName.split('.');
-            originalFileExtension = parts.length > 1 ? parts.pop() : '';
-            
-            uploadBtn.textContent = "Upload different file";
-            fileInfo.textContent = originalFileName;
-            
+
+        async function loadFiles(fileList) {
+            const files = Array.from(fileList).slice(0, 10);
+            if (files.length === 0) return;
+
             inputPreview.classList.add('hidden');
-            inputSkeleton.textContent = "Loading...";
+            inputSkeleton.textContent = "Loading files...";
             inputSkeleton.classList.remove('hidden');
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                sourceFileContent = e.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-                clearFileBtn.classList.remove('hidden');
-                renderInputPreview();
+            const loaded = await Promise.all(files.map(file => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const content = e.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                        const name = file.name;
+                        const relPath = file.webkitRelativePath || file.name;
+                        const parts = name.split('.');
+                        const ext = parts.length > 1 ? parts.pop().toLowerCase() : '';
+                        resolve({
+                            name: name,
+                            relativePath: relPath,
+                            extension: ext,
+                            content: content,
+                            patchedContent: ""
+                        });
+                    };
+                    reader.readAsText(file);
+                });
+            }));
 
-                outputActionsContainer.classList.add('hidden');
-                outputPreview.classList.add('hidden');
-                outputSkeleton.textContent = "Awaiting Patch...";
-                outputSkeleton.classList.remove('hidden');
-                
-                if (instructionsInput.value.trim()) {
-                    processInstructions(instructionsInput.value);
-                } else {
-                    statusList.innerHTML = `<div class="status-item text-gray">${ICONS.info}<span>ready for markdown</span></div>`;
-                }
-            };
-            reader.readAsText(file);
+            filesState = loaded;
+            activeFileIndex = 0;
+
+            uploadBtn.textContent = filesState.length > 1 ? `Upload different files (${filesState.length})` : "Upload different file";
+            fileInfo.textContent = filesState.length > 1 ? `${filesState.length} files selected` : filesState[0].name;
+            clearFileBtn.classList.remove('hidden');
+
+            renderFileTabs();
+            renderActiveInputPreview();
+
+            outputActionsContainer.classList.add('hidden');
+            outputPreview.classList.add('hidden');
+            outputSkeleton.textContent = "Awaiting Patch...";
+            outputSkeleton.classList.remove('hidden');
+            downloadZipBtn.classList.add('hidden');
+
+            if (instructionsInput.value.trim()) {
+                processInstructions(instructionsInput.value);
+            } else {
+                statusList.innerHTML = `<div class="status-item text-gray">${ICONS.info}<span>ready for markdown</span></div>`;
+            }
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                loadFiles(e.target.files);
+            }
         });
 
-        function renderInputPreview() {
+        function renderFileTabs() {
+            if (filesState.length <= 1) {
+                inputFileTabs.classList.add('hidden');
+                outputFileTabs.classList.add('hidden');
+                inputFileTabs.innerHTML = '';
+                outputFileTabs.innerHTML = '';
+                return;
+            }
+
+            const buildTabs = (container) => {
+                container.innerHTML = '';
+                filesState.forEach((f, idx) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = `file-tab-btn ${idx === activeFileIndex ? 'active' : ''}`;
+                    btn.textContent = f.name;
+                    btn.title = f.relativePath || f.name;
+                    btn.addEventListener('click', () => {
+                        activeFileIndex = idx;
+                        renderFileTabs();
+                        renderActiveInputPreview();
+                        renderActiveOutputPreview();
+                    });
+                    container.appendChild(btn);
+                });
+                container.classList.remove('hidden');
+            };
+
+            buildTabs(inputFileTabs);
+            buildTabs(outputFileTabs);
+        }
+
+        function renderActiveInputPreview() {
+            if (!filesState[activeFileIndex]) return;
+            const active = filesState[activeFileIndex];
+
             inputPreview.classList.add('hidden');
             inputSkeleton.textContent = "Loading...";
             inputSkeleton.classList.remove('hidden');
 
             setTimeout(() => {
-                if (originalFileExtension.toLowerCase() === 'html') {
-                    inputPreview.srcdoc = sourceFileContent;
+                if (active.extension === 'html' || active.extension === 'htm') {
+                    inputPreview.srcdoc = active.content;
                 } else {
-                    const escapedContent = sourceFileContent.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    inputPreview.srcdoc = `<pre style="white-space: pre-wrap; word-wrap: break-word; padding: 1rem; font-family: monospace; color: var(--text-main);">${escapedContent}</pre>`;
+                    const escaped = active.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    inputPreview.srcdoc = `<pre style="white-space: pre-wrap; word-wrap: break-word; padding: 1rem; font-family: monospace; color: var(--text-main);">${escaped}</pre>`;
                 }
                 inputPreview.classList.remove('hidden');
                 inputSkeleton.classList.add('hidden');
-            }, 300);
+            }, 200);
         }
 
         // --- Drag and Drop ---
@@ -834,8 +951,7 @@ function init() {
             e.preventDefault();
             moduleInput.classList.remove('drag-over');
             if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                fileInput.files = e.dataTransfer.files;
-                fileInput.dispatchEvent(new Event('change'));
+                loadFiles(e.dataTransfer.files);
             }
         });
 
@@ -859,16 +975,14 @@ function init() {
             });
         });
 
-        // --- Download Execution & Dev Test Handler ---
+        // --- Download Execution, ZIP & Clear Actions ---
         async function executeDownload(filename, content) {
             const ext = filename.includes('.') ? filename.split('.').pop().toLowerCase() : '';
             const mimeType = (ext === 'html' || ext === 'htm') ? 'text/html;charset=utf-8' : 'text/plain;charset=utf-8';
 
             if ('showSaveFilePicker' in window) {
                 try {
-                    const handle = await window.showSaveFilePicker({
-                        suggestedName: filename
-                    });
+                    const handle = await window.showSaveFilePicker({ suggestedName: filename });
                     const writable = await handle.createWritable();
                     await writable.write(content);
                     await writable.close();
@@ -889,15 +1003,120 @@ function init() {
             URL.revokeObjectURL(url);
         }
 
+        // Pure Vanilla PKZIP Builder (Zero External Libraries)
+        const CRC_TABLE = new Uint32Array(256);
+        for (let i = 0; i < 256; i++) {
+            let c = i;
+            for (let j = 0; j < 8; j++) {
+                c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+            }
+            CRC_TABLE[i] = c >>> 0;
+        }
+
+        function calculateCrc32(uint8Array) {
+            let crc = 0xFFFFFFFF;
+            for (let i = 0; i < uint8Array.length; i++) {
+                crc = (crc >>> 8) ^ CRC_TABLE[(crc ^ uint8Array[i]) & 0xFF];
+            }
+            return (crc ^ 0xFFFFFFFF) >>> 0;
+        }
+
+        function createZipArchive(filesToZip) {
+            const encoder = new TextEncoder();
+            const localHeaders = [];
+            const centralHeaders = [];
+            let offset = 0;
+
+            for (const f of filesToZip) {
+                const filePath = (f.relativePath || f.name).replace(/^\.?\/+/, '');
+                const nameBytes = encoder.encode(filePath);
+                const dataBytes = encoder.encode(f.patchedContent || f.content);
+                const checksum = calculateCrc32(dataBytes);
+                const size = dataBytes.length;
+
+                const local = new Uint8Array(30 + nameBytes.length);
+                const lv = new DataView(local.buffer);
+                lv.setUint32(0, 0x04034b50, true);
+                lv.setUint16(4, 20, true);
+                lv.setUint16(6, 0, true);
+                lv.setUint16(8, 0, true);
+                lv.setUint16(10, 0, true);
+                lv.setUint16(12, 0, true);
+                lv.setUint32(14, checksum, true);
+                lv.setUint32(18, size, true);
+                lv.setUint32(22, size, true);
+                lv.setUint16(26, nameBytes.length, true);
+                lv.setUint16(28, 0, true);
+                local.set(nameBytes, 30);
+
+                const central = new Uint8Array(46 + nameBytes.length);
+                const cv = new DataView(central.buffer);
+                cv.setUint32(0, 0x02014b50, true);
+                cv.setUint16(4, 20, true);
+                cv.setUint16(6, 20, true);
+                cv.setUint16(8, 0, true);
+                cv.setUint16(10, 0, true);
+                cv.setUint16(12, 0, true);
+                cv.setUint16(14, 0, true);
+                cv.setUint32(16, checksum, true);
+                cv.setUint32(20, size, true);
+                cv.setUint32(24, size, true);
+                cv.setUint16(28, nameBytes.length, true);
+                cv.setUint16(30, 0, true);
+                cv.setUint16(32, 0, true);
+                cv.setUint16(34, 0, true);
+                cv.setUint16(36, 0, true);
+                cv.setUint32(38, 0, true);
+                cv.setUint32(42, offset, true);
+                central.set(nameBytes, 46);
+
+                localHeaders.push(local, dataBytes);
+                centralHeaders.push(central);
+                offset += local.length + size;
+            }
+
+            const cdSize = centralHeaders.reduce((sum, h) => sum + h.length, 0);
+            const cdOffset = offset;
+            const eocd = new Uint8Array(22);
+            const ev = new DataView(eocd.buffer);
+            ev.setUint32(0, 0x06054b50, true);
+            ev.setUint16(4, 0, true);
+            ev.setUint16(6, 0, true);
+            ev.setUint16(8, filesToZip.length, true);
+            ev.setUint16(10, filesToZip.length, true);
+            ev.setUint32(12, cdSize, true);
+            ev.setUint32(16, cdOffset, true);
+            ev.setUint16(20, 0, true);
+
+            return new Blob([...localHeaders, ...centralHeaders, eocd], { type: 'application/zip' });
+        }
+
         downloadBtn.addEventListener('click', () => {
-            const fallbackName = originalFileName || 'index.html';
-            const filename = outputFilenameInput.value.trim() || fallbackName;
-            executeDownload(filename, lastPatchedContent);
+            const active = filesState[activeFileIndex];
+            const content = active ? (active.patchedContent || active.content) : SAMPLE_TEST_HTML;
+            const fallback = active ? active.name : 'index.html';
+            const filename = outputFilenameInput.value.trim() || fallback;
+            executeDownload(filename, content);
+        });
+
+        downloadZipBtn.addEventListener('click', () => {
+            if (filesState.length === 0) return;
+            const zipBlob = createZipArchive(filesState);
+            const url = URL.createObjectURL(zipBlob);
+            const tempLink = document.createElement('a');
+            tempLink.href = url;
+            tempLink.download = 'patched_bundle.zip';
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+            URL.revokeObjectURL(url);
         });
 
         copyOutputBtn.addEventListener('click', async () => {
+            const active = filesState[activeFileIndex];
+            const content = active ? (active.patchedContent || active.content) : "";
             try {
-                await navigator.clipboard.writeText(lastPatchedContent);
+                await navigator.clipboard.writeText(content);
                 const origText = copyOutputBtn.textContent;
                 copyOutputBtn.textContent = "Copied!";
                 setTimeout(() => copyOutputBtn.textContent = origText, 2000);
@@ -908,24 +1127,31 @@ function init() {
 
         devTestToggle.addEventListener('change', () => {
             if (devTestToggle.checked) {
-                outputFilenameInput.value = outputFilenameInput.value.trim() || 'index.html';
+                filesState = [{
+                    name: 'index.html',
+                    relativePath: 'index.html',
+                    extension: 'html',
+                    content: SAMPLE_TEST_HTML,
+                    patchedContent: SAMPLE_TEST_HTML
+                }];
+                activeFileIndex = 0;
+                outputFilenameInput.value = 'index.html';
                 downloadBtn.textContent = "Download sample file";
-                lastPatchedContent = SAMPLE_TEST_HTML;
                 outputActionsContainer.classList.remove('hidden');
+                downloadZipBtn.classList.add('hidden');
             } else {
                 outputActionsContainer.classList.add('hidden');
                 downloadBtn.textContent = "Download";
-                lastPatchedContent = "";
+                filesState = [];
             }
         });
 
-        // --- Clear Actions ---
         clearFileBtn.addEventListener('click', () => {
-            sourceFileContent = "";
-            originalFileName = "";
-            originalFileExtension = "";
+            filesState = [];
+            activeFileIndex = 0;
             fileInput.value = "";
             fileInfo.textContent = "No file selected";
+            uploadBtn.textContent = "Upload file(s)";
             clearFileBtn.classList.add('hidden');
             inputPreview.classList.add('hidden');
             inputSkeleton.textContent = "Awaiting File...";
@@ -935,10 +1161,11 @@ function init() {
             outputSkeleton.textContent = "Awaiting Patch...";
             outputSkeleton.classList.remove('hidden');
             outputFilenameInput.value = "";
-            lastPatchedContent = "";
             devTestToggle.checked = false;
             devTestLabel.classList.remove('hidden');
             downloadBtn.textContent = "Download";
+            downloadZipBtn.classList.add('hidden');
+            renderFileTabs();
         });
 
         clearInstructionsBtn.addEventListener('click', () => {
@@ -950,10 +1177,11 @@ function init() {
             outputSkeleton.textContent = "Awaiting Patch...";
             outputSkeleton.classList.remove('hidden');
             outputFilenameInput.value = "";
-            lastPatchedContent = "";
             devTestToggle.checked = false;
             devTestLabel.classList.remove('hidden');
             downloadBtn.textContent = "Download";
+            downloadZipBtn.classList.add('hidden');
+            filesState.forEach(f => f.patchedContent = "");
         });
 
         // --- GitHub LDD Fetcher ---
@@ -1005,7 +1233,7 @@ function init() {
             }
         });
 
-        // --- Error Link Routing ---
+        // --- Error Link Routing & Active Previews ---
         statusList.addEventListener('click', (e) => {
             const errorLink = e.target.closest('.error-link');
             if (errorLink) {
@@ -1023,6 +1251,32 @@ function init() {
             }
         });
 
+        function renderActiveOutputPreview() {
+            if (!filesState[activeFileIndex]) return;
+            const active = filesState[activeFileIndex];
+            const content = active.patchedContent || active.content || "";
+            outputFilenameInput.value = active.name || 'index.html';
+
+            if (!content) {
+                outputPreview.classList.add('hidden');
+                outputSkeleton.textContent = "Awaiting Patch...";
+                outputSkeleton.classList.remove('hidden');
+                return;
+            }
+
+            outputSkeleton.textContent = "Rendering...";
+            setTimeout(() => {
+                if (active.extension === 'html' || active.extension === 'htm') {
+                    outputPreview.srcdoc = content;
+                } else {
+                    const escaped = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    outputPreview.srcdoc = `<pre style="white-space: pre-wrap; word-wrap: break-word; padding: 1rem; font-family: monospace; color: var(--text-main);">${escaped}</pre>`;
+                }
+                outputPreview.classList.remove('hidden');
+                outputSkeleton.classList.add('hidden');
+            }, 200);
+        }
+
         // --- Textarea Input & Debounce ---
         instructionsInput.addEventListener('input', () => {
             const text = instructionsInput.value;
@@ -1035,7 +1289,7 @@ function init() {
             }
             
             debounceTimer = setTimeout(() => {
-                if (sourceFileContent) {
+                if (filesState.length > 0) {
                     processInstructions(text);
                 } else {
                     statusList.innerHTML = `<div class="status-item text-gray">${ICONS.info}<span>Markdown ready. Awaiting file upload...</span></div>`;
@@ -1057,7 +1311,7 @@ function init() {
                 instructionsInput.value = text;
                 clearInstructionsBtn.classList.remove('hidden');
 
-                if (!sourceFileContent) {
+                if (filesState.length === 0) {
                     currentInstructions = text;
                     statusList.innerHTML = `<div class="status-item text-gray">${ICONS.info}<span>Markdown ready. Awaiting file upload...</span></div>`;
                 } else {
@@ -1069,120 +1323,188 @@ function init() {
             }
         });
 
-        // --- Core Engine Logic ---
+        // --- Core Multi-File Engine Logic ---
         function processInstructions(instructions) {
             isProcessing = true;
             currentInstructions = instructions;
             failedPatchesMap = {};
             
             engineSkeleton.classList.remove('hidden');
-            statusList.innerHTML = `<div class="status-item text-gray"><div class="spinner"></div><span>Reading clipboard...</span></div>`;
+            statusList.innerHTML = `<div class="status-item text-gray"><div class="spinner"></div><span>Parsing AI instructions...</span></div>`;
             
             setTimeout(() => {
-                statusList.innerHTML = `<div class="status-item text-gray"><div class="spinner"></div><span>Parsing AI instructions...</span></div>`;
-                
-                setTimeout(() => {
-                    executePatches(instructions);
-                }, 400);
+                executePatches(instructions);
             }, 300);
         }
 
         function executePatches(instructions) {
-            const normalizedInstructions = instructions.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-            
-            const b = '\\x60{3,}';
-            const rangePattern = 'Find\\s+start\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\1\\s*Find\\s+end\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\3\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\5';
-            const standardPattern = 'Find(?!\\s+start)\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\7\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\9';
-            const combinedRegex = new RegExp('(?:' + rangePattern + ')|(?:' + standardPattern + ')', 'gi');
+            const normalized = instructions.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-            const patches = [];
-            let match;
-            
-            while ((match = combinedRegex.exec(normalizedInstructions)) !== null) {
-                if (match[2] !== undefined) {
-                    let startBlock = match[2];
-                    let endBlock = match[4];
-                    let replaceBlock = match[6];
-                    if (startBlock.endsWith('\n')) startBlock = startBlock.slice(0, -1);
-                    if (endBlock.endsWith('\n')) endBlock = endBlock.slice(0, -1);
-                    if (replaceBlock.endsWith('\n')) replaceBlock = replaceBlock.slice(0, -1);
-                    patches.push({ type: 'range', findStart: startBlock, findEnd: endBlock, replace: replaceBlock });
-                } else {
-                    let findBlock = match[8];
-                    let replaceBlock = match[10];
-                    if (findBlock.endsWith('\n')) findBlock = findBlock.slice(0, -1);
-                    if (replaceBlock.endsWith('\n')) replaceBlock = replaceBlock.slice(0, -1);
-                    patches.push({ type: 'standard', find: findBlock, replace: replaceBlock });
+            const headerRegex = /(?:^|\n)#{1,6}\s*(?:TARGET\s+)?FILE:\s*[`*~_]*([^\n`*~_]+)[`*~_]*/gi;
+            const sections = [];
+            const headerMatches = [];
+            let hMatch;
+
+            while ((hMatch = headerRegex.exec(normalized)) !== null) {
+                headerMatches.push({
+                    index: hMatch.index,
+                    rawLength: hMatch[0].length,
+                    target: hMatch[1].trim()
+                });
+            }
+
+            if (headerMatches.length === 0) {
+                sections.push({
+                    target: filesState[activeFileIndex] ? filesState[activeFileIndex].name : '',
+                    contentSlice: normalized
+                });
+            } else {
+                for (let i = 0; i < headerMatches.length; i++) {
+                    const start = headerMatches[i].index + headerMatches[i].rawLength;
+                    const end = (i + 1 < headerMatches.length) ? headerMatches[i + 1].index : normalized.length;
+                    sections.push({
+                        target: headerMatches[i].target,
+                        contentSlice: normalized.slice(start, end)
+                    });
                 }
             }
 
+            const b = '\\x60{3,}';
+            const rangePattern = 'Find\\s+start\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\1\\s*Find\\s+end\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\3\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\5';
+            const standardPattern = 'Find(?!\\s+start)\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\7\\s*Replace\\s+with\\s*(' + b + ')[^\\n]*\\n([\\s\\S]*?)\\9';
+
             statusList.innerHTML = '';
             engineSkeleton.classList.add('hidden');
+            failedPatchesMap = {};
 
-            if (patches.length === 0) {
+            let totalPatchesFound = 0;
+            let totalSuccess = 0;
+
+            sections.forEach((sec, secIdx) => {
+                let targetFile = null;
+
+                if (filesState.length > 0) {
+                    if (headerMatches.length === 0) {
+                        targetFile = filesState[activeFileIndex];
+                    } else {
+                        const normTarget = sec.target.toLowerCase().replace(/^\.?\/+/, '');
+                        const baseTarget = normTarget.split(/[/\\]/).pop();
+
+                        let matchIdx = filesState.findIndex(f => {
+                            const fRel = (f.relativePath || f.name).toLowerCase().replace(/^\.?\/+/, '');
+                            return fRel === normTarget;
+                        });
+
+                        if (matchIdx === -1) {
+                            matchIdx = filesState.findIndex(f => f.name.toLowerCase() === baseTarget);
+                        }
+
+                        if (matchIdx !== -1) {
+                            targetFile = filesState[matchIdx];
+                        }
+                    }
+                }
+
+                const patchRegex = new RegExp('(?:' + rangePattern + ')|(?:' + standardPattern + ')', 'gi');
+                const filePatches = [];
+                let pMatch;
+
+                while ((pMatch = patchRegex.exec(sec.contentSlice)) !== null) {
+                    if (pMatch[2] !== undefined) {
+                        let sb = pMatch[2], eb = pMatch[4], rb = pMatch[6];
+                        if (sb.endsWith('\n')) sb = sb.slice(0, -1);
+                        if (eb.endsWith('\n')) eb = eb.slice(0, -1);
+                        if (rb.endsWith('\n')) rb = rb.slice(0, -1);
+                        filePatches.push({ type: 'range', findStart: sb, findEnd: eb, replace: rb });
+                    } else {
+                        let fb = pMatch[8], rb = pMatch[10];
+                        if (fb.endsWith('\n')) fb = fb.slice(0, -1);
+                        if (rb.endsWith('\n')) rb = rb.slice(0, -1);
+                        filePatches.push({ type: 'standard', find: fb, replace: rb });
+                    }
+                }
+
+                if (filePatches.length === 0) return;
+                totalPatchesFound += filePatches.length;
+
+                let groupContainer = statusList;
+                if (filesState.length > 1 || headerMatches.length > 0) {
+                    const groupEl = document.createElement('div');
+                    groupEl.className = 'status-file-group';
+                    const displayName = targetFile ? (targetFile.relativePath || targetFile.name) : sec.target;
+                    groupEl.innerHTML = `<div class="status-file-header"><span>${displayName}</span><span id="file-count-${secIdx}"></span></div>`;
+                    statusList.appendChild(groupEl);
+                    groupContainer = groupEl;
+                }
+
+                if (!targetFile) {
+                    groupContainer.innerHTML += `<div class="status-item text-red">${ICONS.alert}<span>File not uploaded</span></div>`;
+                    return;
+                }
+
+                let workingContent = targetFile.content;
+                let fileSuccess = 0;
+
+                filePatches.forEach((patch, pIdx) => {
+                    const patchNum = pIdx + 1;
+                    const errKey = `${secIdx}_${patchNum}`;
+
+                    if (patch.type === 'standard') {
+                        if (workingContent.includes(patch.find)) {
+                            workingContent = workingContent.replace(patch.find, patch.replace);
+                            groupContainer.innerHTML += `<div class="status-item text-green">${ICONS.check}<span>patch ${patchNum} applied (exact)</span></div>`;
+                            fileSuccess++;
+                            totalSuccess++;
+                        } else {
+                            failedPatchesMap[errKey] = patch.find;
+                            groupContainer.innerHTML += `<a href="#" class="error-link status-item text-red" data-patch="${errKey}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchNum} not found (click to locate)</span></a>`;
+                        }
+                    } else if (patch.type === 'range') {
+                        const startIndex = workingContent.indexOf(patch.findStart);
+                        if (startIndex === -1) {
+                            failedPatchesMap[errKey] = patch.findStart;
+                            groupContainer.innerHTML += `<a href="#" class="error-link status-item text-red" data-patch="${errKey}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchNum} start anchor not found (click to locate)</span></a>`;
+                        } else {
+                            const searchAfter = startIndex + patch.findStart.length;
+                            const endIndex = workingContent.indexOf(patch.findEnd, searchAfter);
+                            if (endIndex === -1) {
+                                failedPatchesMap[errKey] = patch.findEnd;
+                                groupContainer.innerHTML += `<a href="#" class="error-link status-item text-red" data-patch="${errKey}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchNum} end anchor not found (click to locate)</span></a>`;
+                            } else {
+                                const fullEnd = endIndex + patch.findEnd.length;
+                                workingContent = workingContent.slice(0, startIndex) + patch.replace + workingContent.slice(fullEnd);
+                                groupContainer.innerHTML += `<div class="status-item text-green">${ICONS.check}<span>patch ${patchNum} applied (range)</span></div>`;
+                                fileSuccess++;
+                                totalSuccess++;
+                            }
+                        }
+                    }
+                });
+
+                targetFile.patchedContent = workingContent;
+                const countEl = document.getElementById(`file-count-${secIdx}`);
+                if (countEl) countEl.textContent = `${fileSuccess}/${filePatches.length}`;
+            });
+
+            if (totalPatchesFound === 0) {
                 statusList.innerHTML = `<div class="status-item text-red">${ICONS.alert}<span>No valid Find/Replace blocks found</span></div>`;
                 isProcessing = false;
                 return;
             }
 
-            let patchedContent = sourceFileContent;
-            let patchCount = 0;
-            let successCount = 0;
+            if (totalSuccess > 0) {
+                renderActiveOutputPreview();
+                devTestToggle.checked = false;
+                devTestLabel.classList.add('hidden');
+                downloadBtn.textContent = "Download";
+                outputActionsContainer.classList.remove('hidden');
 
-            for (let i = 0; i < patches.length; i++) {
-                const patch = patches[i];
-                patchCount++;
-
-                if (patch.type === 'standard') {
-                    if (patchedContent.includes(patch.find)) {
-                        patchedContent = patchedContent.replace(patch.find, patch.replace);
-                        statusList.innerHTML += `<div class="status-item text-green">${ICONS.check}<span>patch ${patchCount} applied (exact)</span></div>`;
-                        successCount++;
-                    } else {
-                        failedPatchesMap[patchCount] = patch.find;
-                        statusList.innerHTML += `<a href="#" class="error-link status-item text-red" data-patch="${patchCount}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchCount} not found (click to locate)</span></a>`;
-                    }
-                } else if (patch.type === 'range') {
-                    const startIndex = patchedContent.indexOf(patch.findStart);
-                    if (startIndex === -1) {
-                        failedPatchesMap[patchCount] = patch.findStart;
-                        statusList.innerHTML += `<a href="#" class="error-link status-item text-red" data-patch="${patchCount}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchCount} start anchor not found (click to locate)</span></a>`;
-                    } else {
-                        const searchAfter = startIndex + patch.findStart.length;
-                        const endIndex = patchedContent.indexOf(patch.findEnd, searchAfter);
-                        if (endIndex === -1) {
-                            failedPatchesMap[patchCount] = patch.findEnd;
-                            statusList.innerHTML += `<a href="#" class="error-link status-item text-red" data-patch="${patchCount}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchCount} end anchor not found after start (click to locate)</span></a>`;
-                        } else {
-                            const fullEnd = endIndex + patch.findEnd.length;
-                            patchedContent = patchedContent.slice(0, startIndex) + patch.replace + patchedContent.slice(fullEnd);
-                            statusList.innerHTML += `<div class="status-item text-green">${ICONS.check}<span>patch ${patchCount} applied (range)</span></div>`;
-                            successCount++;
-                        }
-                    }
+                const patchedFiles = filesState.filter(f => f.patchedContent);
+                if (patchedFiles.length > 1) {
+                    downloadZipBtn.classList.remove('hidden');
+                } else {
+                    downloadZipBtn.classList.add('hidden');
                 }
-            }
-
-            if (successCount > 0) {
-                outputSkeleton.textContent = "Rendering...";
-                lastPatchedContent = patchedContent;
-                
-                setTimeout(() => {
-                    if (originalFileExtension.toLowerCase() === 'html') {
-                        outputPreview.srcdoc = patchedContent;
-                    } else {
-                        const escapedContent = patchedContent.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        outputPreview.srcdoc = `<pre style="white-space: pre-wrap; word-wrap: break-word; padding: 1rem; font-family: monospace; color: var(--text-main);">${escapedContent}</pre>`;
-                    }
-                    outputPreview.classList.remove('hidden');
-                    outputSkeleton.classList.add('hidden');
-                    
-                    devTestToggle.checked = false;
-                    devTestLabel.classList.add('hidden');
-                    downloadBtn.textContent = "Download";
-                    outputFilenameInput.value = originalFileName || 'index.html';
-                    outputActionsContainer.classList.remove('hidden');
-                }, 300);
             } else {
                 outputSkeleton.textContent = "No changes applied.";
             }
