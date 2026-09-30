@@ -730,7 +730,7 @@
     <header>
         <div class="header-controls">
             <div class="header-title-group">
-                <h1>Patcher <span class="version-badge">v0.2.4</span></h1>
+                <h1>Patcher <span class="version-badge">v0.2.5</span></h1>
                 <nav class="header-nav">
                     <a href="https://spamfan.github.io/navigator" class="header-nav-link">navigator</a>
                     <a href="https://spamfan.github.io/mdviewer" class="header-nav-link">mdviewer</a>
@@ -977,7 +977,171 @@ function init() {
         let failedPatchesMap = {};
         let debounceTimer;
 
-        // --- MD Viewer State & Logic ---
+        // --- System Theme Initialization & Persistence ---
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function applyTheme(isDark) {
+            if (isDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeToggle.innerHTML = ICONS.sun;
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                themeToggle.innerHTML = ICONS.moon;
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('patcher_theme');
+            if (savedTheme === 'dark') {
+                applyTheme(true);
+            } else if (savedTheme === 'light') {
+                applyTheme(false);
+            } else {
+                applyTheme(systemPrefersDark.matches);
+            }
+        }
+        initTheme();
+
+        systemPrefersDark.addEventListener('change', (e) => {
+            if (!localStorage.getItem('patcher_theme')) {
+                applyTheme(e.matches);
+            }
+        });
+
+        themeToggle.addEventListener('click', () => {
+            const isCurrentlyDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isCurrentlyDark ? 'light' : 'dark';
+            applyTheme(!isCurrentlyDark);
+            localStorage.setItem('patcher_theme', newTheme);
+        });
+
+        // --- File Ingestion, Tabs & Auto-Paste ---
+        uploadBtn.addEventListener('click', async () => {
+            if (!instructionsInput.value.trim() && navigator.clipboard && navigator.clipboard.readText) {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    if (text.trim()) {
+                        instructionsInput.value = text;
+                        currentInstructions = text;
+                        clearInstructionsBtn.classList.remove('hidden');
+                        statusList.innerHTML = `<div class="status-item text-green">${ICONS.check}<span>Auto-pasted from clipboard</span></div>`;
+                    }
+                } catch (_) {}
+            }
+            fileInput.click();
+        });
+
+        async function loadFiles(fileList) {
+            const files = Array.from(fileList).slice(0, 10);
+            if (files.length === 0) return;
+
+            inputPreview.classList.add('hidden');
+            inputSkeleton.textContent = "Loading files...";
+            inputSkeleton.classList.remove('hidden');
+
+            const loaded = await Promise.all(files.map(file => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const content = e.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                        const name = file.name;
+                        const relPath = file.webkitRelativePath || file.name;
+                        const parts = name.split('.');
+                        const ext = parts.length > 1 ? parts.pop().toLowerCase() : '';
+                        resolve({
+                            name: name,
+                            relativePath: relPath,
+                            extension: ext,
+                            content: content,
+                            patchedContent: ""
+                        });
+                    };
+                    reader.readAsText(file);
+                });
+            }));
+
+            filesState = loaded;
+            activeFileIndex = 0;
+
+            uploadBtn.textContent = filesState.length > 1 ? `Upload different files (${filesState.length})` : "Upload different file";
+            fileInfo.textContent = filesState.length > 1 ? `${filesState.length} files selected` : filesState[0].name;
+            clearFileBtn.classList.remove('hidden');
+
+            renderFileTabs();
+            renderActiveInputPreview();
+
+            outputActionsContainer.classList.add('hidden');
+            outputPreview.classList.add('hidden');
+            outputSkeleton.textContent = "Awaiting Patch...";
+            outputSkeleton.classList.remove('hidden');
+            downloadZipBtn.classList.add('hidden');
+
+            if (instructionsInput.value.trim()) {
+                processInstructions(instructionsInput.value);
+            } else {
+                statusList.innerHTML = `<div class="status-item text-gray">${ICONS.info}<span>ready for markdown</span></div>`;
+            }
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                loadFiles(e.target.files);
+            }
+        });
+
+        function renderFileTabs() {
+            if (filesState.length <= 1) {
+                inputFileTabs.classList.add('hidden');
+                outputFileTabs.classList.add('hidden');
+                inputFileTabs.innerHTML = '';
+                outputFileTabs.innerHTML = '';
+                return;
+            }
+
+            const buildTabs = (container) => {
+                container.innerHTML = '';
+                filesState.forEach((f, idx) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = `file-tab-btn ${idx === activeFileIndex ? 'active' : ''}`;
+                    btn.textContent = f.name;
+                    btn.title = f.relativePath || f.name;
+                    btn.addEventListener('click', () => {
+                        activeFileIndex = idx;
+                        renderFileTabs();
+                        renderActiveInputPreview();
+                        renderActiveOutputPreview();
+                    });
+                    container.appendChild(btn);
+                });
+                container.classList.remove('hidden');
+            };
+
+            buildTabs(inputFileTabs);
+            buildTabs(outputFileTabs);
+        }
+
+        function renderActiveInputPreview() {
+            if (!filesState[activeFileIndex]) return;
+            const active = filesState[activeFileIndex];
+
+            inputPreview.classList.add('hidden');
+            inputSkeleton.textContent = "Loading...";
+            inputSkeleton.classList.remove('hidden');
+
+            setTimeout(() => {
+                if (active.extension === 'html' || active.extension === 'htm') {
+                    inputPreview.srcdoc = active.content;
+                } else {
+                    const escaped = active.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    inputPreview.srcdoc = `<pre style="white-space: pre-wrap; word-wrap: break-word; padding: 1rem; font-family: monospace; color: var(--text-main);">${escaped}</pre>`;
+                }
+                inputPreview.classList.remove('hidden');
+                inputSkeleton.classList.add('hidden');
+            }, 200);
+        }
+
+        // --- MD Viewer State & Handlers ---
         let mdViewerSlots = [{ id: 1, name: '', content: '' }];
 
         function renderMdSlots() {
@@ -1055,9 +1219,12 @@ function init() {
                 });
             });
 
-            btnToggleMd.querySelector('span').textContent = `MD Viewer (${mdViewerSlots.length})`;
-            btnAddMdSlot.disabled = mdViewerSlots.length >= 3;
-            btnRemoveMdSlot.disabled = mdViewerSlots.length <= 1;
+            if (btnToggleMd) {
+                const labelSpan = btnToggleMd.querySelector('span');
+                if (labelSpan) labelSpan.textContent = `MD Viewer (${mdViewerSlots.length})`;
+            }
+            if (btnAddMdSlot) btnAddMdSlot.disabled = mdViewerSlots.length >= 3;
+            if (btnRemoveMdSlot) btnRemoveMdSlot.disabled = mdViewerSlots.length <= 1;
         }
 
         function loadMdFileIntoSlot(file, slotIndex) {
@@ -1073,48 +1240,39 @@ function init() {
             reader.readAsText(file);
         }
 
-        btnToggleMd.addEventListener('click', () => {
-            const isHidden = mdDock.classList.toggle('hidden');
-            if (!isHidden) {
-                renderMdSlots();
-                mdDock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-        });
-
-        btnCloseMdDock.addEventListener('click', () => {
-            mdDock.classList.add('hidden');
-        });
-
-        btnAddMdSlot.addEventListener('click', () => {
-            if (mdViewerSlots.length < 3) {
-                mdViewerSlots.push({ id: mdViewerSlots.length + 1, name: '', content: '' });
-                renderMdSlots();
-            }
-        });
-
-        btnRemoveMdSlot.addEventListener('click', () => {
-            if (mdViewerSlots.length > 1) {
-                mdViewerSlots.pop();
-                renderMdSlots();
-            }
-        });
-            if (!filesState[activeFileIndex]) return;
-            const active = filesState[activeFileIndex];
-
-            inputPreview.classList.add('hidden');
-            inputSkeleton.textContent = "Loading...";
-            inputSkeleton.classList.remove('hidden');
-
-            setTimeout(() => {
-                if (active.extension === 'html' || active.extension === 'htm') {
-                    inputPreview.srcdoc = active.content;
-                } else {
-                    const escaped = active.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    inputPreview.srcdoc = `<pre style="white-space: pre-wrap; word-wrap: break-word; padding: 1rem; font-family: monospace; color: var(--text-main);">${escaped}</pre>`;
+        if (btnToggleMd) {
+            btnToggleMd.addEventListener('click', () => {
+                if (!mdDock) return;
+                const isHidden = mdDock.classList.toggle('hidden');
+                if (!isHidden) {
+                    renderMdSlots();
+                    mdDock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
-                inputPreview.classList.remove('hidden');
-                inputSkeleton.classList.add('hidden');
-            }, 200);
+            });
+        }
+
+        if (btnCloseMdDock) {
+            btnCloseMdDock.addEventListener('click', () => {
+                if (mdDock) mdDock.classList.add('hidden');
+            });
+        }
+
+        if (btnAddMdSlot) {
+            btnAddMdSlot.addEventListener('click', () => {
+                if (mdViewerSlots.length < 3) {
+                    mdViewerSlots.push({ id: mdViewerSlots.length + 1, name: '', content: '' });
+                    renderMdSlots();
+                }
+            });
+        }
+
+        if (btnRemoveMdSlot) {
+            btnRemoveMdSlot.addEventListener('click', () => {
+                if (mdViewerSlots.length > 1) {
+                    mdViewerSlots.pop();
+                    renderMdSlots();
+                }
+            });
         }
 
         // --- Drag and Drop ---
