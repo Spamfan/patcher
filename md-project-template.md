@@ -49,7 +49,9 @@
 * **Unified Multi-File Delivery:** Deliver all patches across all modified files in a single unified markdown response.
 * **Target File Demarcation & Ordering:** Every file segment MUST begin with:
   `### TARGET FILE: path/to/file.ext`
-  In multi-file deliveries, target file segments must be ordered strictly alphabetically by filename.
+  or for dynamic renaming during patching:
+  `### TARGET FILE: path/to/old_file.ext -> path/to/new_file.ext`
+  In multi-file deliveries, target file segments must be ordered strictly alphabetically by target source filename.
 * **Strict Sequential Patch Headers:** Explicitly state patch index and total count: `Patch X/Y`.
 * **Literal Contiguous Matching (Zero Shortcuts):** Matches are strictly applied via character-by-character regex slices. `Find`, `Find start`, and `Find end` blocks must be uninterrupted, contiguous slices of literal code. Never bridge code with ellipses (`...`, `...and...`, or `// rest of code`).
 * **Patch Methods (Standard vs. Range):**

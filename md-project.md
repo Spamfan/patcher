@@ -1,6 +1,6 @@
 # PATCHER
 ### Browser-Based AI Code Patcher & Diff Engine
-### Living Design Document (LDD) V4
+### Living Design Document (LDD) V5
 
 ---
 
@@ -49,7 +49,9 @@
 * **Unified Multi-File Delivery:** Deliver all patches across all modified files in a single unified markdown response.
 * **Target File Demarcation & Ordering:** Every file segment MUST begin with:
   `### TARGET FILE: path/to/file.ext`
-  In multi-file deliveries, target file segments must be ordered strictly alphabetically by filename.
+  or for dynamic renaming during patching:
+  `### TARGET FILE: path/to/old_file.ext -> path/to/new_file.ext`
+  In multi-file deliveries, target file segments must be ordered strictly alphabetically by target source filename.
 * **Strict Sequential Patch Headers:** Explicitly state patch index and total count: `Patch X/Y`.
 * **Literal Contiguous Matching (Zero Shortcuts):** Matches are strictly applied via character-by-character regex slices. `Find`, `Find start`, and `Find end` blocks must be uninterrupted, contiguous slices of literal code. Never bridge code with ellipses (`...`, `...and...`, or `// rest of code`).
 * **Patch Methods (Standard vs. Range):**
@@ -193,12 +195,12 @@ Replace with
 
 ### 5. SYSTEM & ARCHITECTURE CONSTRAINTS
 
-* **Architecture:** 100% Vanilla HTML, CSS, and JS contained within a single `index.html` file. Hosted via GitHub Pages. Zero npm dependencies, build scripts, or backend servers.
+* **Application Summary:** Patcher is a zero-dependency, single-file browser workbench that automates applying AI-generated code diffs to project source files directly in-memory. Users upload working project files, paste LLM markdown containing standard or range patches, and Patcher executes exact byte-level find-and-replace routines, displaying real-time previews, trace navigation, and bundle packaging.
 * **The 3-Module Engine Flow:**
-  * **Module 1 (Input):** Multi-file input (up to 10 files), tab switcher, drag-and-drop, and preview rendering (`<iframe>` for HTML, `<pre>` for plain text/code).
-  * **Module 2 (Engine):** Direct textarea `#instructions-input`. Dual-mode regex engine parsing Standard (`Find`) and Range (`Find start` + `Find end`) patterns. Supports multi-backtick delimiters (3+ backticks) and `### TARGET FILE:` multi-file boundaries.
-  * **Module 3 (Output):** Smart patched output previews, individual blob file downloads via `showSaveFilePicker` / link simulation, clipboard copy, and native multi-file PKZip archive compilation.
-* **MD Viewer Multi-Panel Dock:** Expandable dock featuring 1 to 3 dynamic file slots rendering markdown via CDN Marked.js (`marked.parse()`) with drag-and-drop intake.
+  * **Module 1 (Input):** Multi-file intake supporting up to 25 files via drag-and-drop or system file picker. Includes responsive touch/scroll snap carousel tabs with strict horizontal overflow containment (`min-width: 0`), and live sandboxed iframe previews.
+  * **Module 2 (Engine):** Direct textarea `#instructions-input` with auto-clipboard ingestion, debounced parsing, and dual-mode regex evaluation: Standard (`Find`) and Range (`Find start` + `Find end`). Features dynamic file renaming (`old -> new`) and bi-directional click-to-trace line navigation for both applied and missing patches.
+  * **Module 3 (Output):** Smart patched output rendering, responsive tab switching, editable filename synchronization, single-file downloads, clipboard copying, and PKZip archive generation respecting renamed filenames.
+* **MD Viewer Multi-Panel Dock:** Expandable reference dock with up to 5 dynamic file slots rendering markdown via CDN Marked.js (`marked.parse()`). Offers auto-appending next-slot readiness, secondary "Replace" button switching, and direct header toggle triggering immediate native file picking.
 * **PKZip Generation Engine:** Embedded pure vanilla ZIP builder (`CRC_TABLE`, `calculateCrc32()`, local and central directory headers). No external libraries (e.g. JSZip) allowed.
 * **GitHub LDD Fetcher & Template Conventions:**
   * Queries GitHub API (`/repos/spamfan/patcher/contents/`) for downloadable LDD rulebooks.
@@ -211,9 +213,9 @@ Replace with
 ### 6. BASELINE FLOOR & FILE TREE
 
 #### Version Floor
-* **App (Patcher):** `v0.2.5`  
-* **`index.html`:** `v0.2.5`  
-* **`md-project.md`:** `V4`  
+* **App (Patcher):** `v0.2.6`  
+* **`index.html`:** `v0.2.6`  
+* **`md-project.md`:** `V5`  
 
 #### File Tree
 * `index.html`

@@ -229,6 +229,7 @@
             max-width: 1400px;
             flex-grow: 1;
             align-items: start;
+            min-width: 0;
         }
 
         .module {
@@ -236,6 +237,8 @@
             flex-direction: column;
             gap: 1rem;
             width: 100%;
+            min-width: 0;
+            max-width: 100%;
             background-color: var(--bg-panel);
             padding: 1.25rem;
             border-radius: var(--radius-card);
@@ -509,9 +512,14 @@
             display: flex;
             gap: 0.35rem;
             overflow-x: auto;
-            padding: 0.25rem 0;
+            padding: 0.25rem 0.15rem;
             margin-bottom: 0.25rem;
             scrollbar-width: thin;
+            min-width: 0;
+            max-width: 100%;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
         }
 
         .file-tab-btn {
@@ -529,6 +537,8 @@
             align-items: center;
             gap: 0.35rem;
             width: auto;
+            flex-shrink: 0;
+            scroll-snap-align: start;
         }
 
         .file-tab-btn:hover {
@@ -671,6 +681,23 @@
             background-color: var(--accent-hover);
         }
 
+        .btn-slot-replace {
+            padding: 0.3rem 0.65rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border-radius: var(--radius-pill);
+            background-color: var(--bg-panel);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            width: auto;
+            transition: all 0.2s ease;
+        }
+
+        .btn-slot-replace:hover {
+            background-color: var(--border-color);
+        }
+
         .md-slot-body {
             padding: 1rem 1.25rem;
             overflow-y: auto;
@@ -730,10 +757,9 @@
     <header>
         <div class="header-controls">
             <div class="header-title-group">
-                <h1>Patcher <span class="version-badge">v0.2.5</span></h1>
+                <h1>Patcher <span class="version-badge">v0.2.6</span></h1>
                 <nav class="header-nav">
                     <a href="https://spamfan.github.io/navigator" class="header-nav-link">navigator</a>
-                    <a href="https://spamfan.github.io/mdviewer" class="header-nav-link">mdviewer</a>
                 </nav>
             </div>
             <div class="header-buttons">
@@ -807,10 +833,6 @@
                         <button id="copy-output-btn" class="btn-secondary" style="width: auto;">Copy</button>
                     </div>
                 </div>
-                <label id="dev-test-label" style="display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; user-select: none;">
-                    <input type="checkbox" id="dev-test-toggle" style="cursor: pointer;">
-                    <span>Test download function (dev)</span>
-                </label>
             </div>
             <div class="file-tabs-bar hidden" id="output-file-tabs"></div>
             <div class="preview-container">
@@ -828,8 +850,6 @@
                 Markdown Viewer
             </h2>
             <div class="md-dock-controls">
-                <button type="button" id="btn-add-md-slot" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" title="Add Markdown Slot">+ Slot</button>
-                <button type="button" id="btn-remove-md-slot" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" title="Remove Markdown Slot">− Slot</button>
                 <button type="button" id="btn-close-md-dock" class="btn-mini-clear" title="Close MD Viewer" aria-label="Close MD Viewer">
                     <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                 </button>
@@ -950,10 +970,6 @@ function init() {
         const downloadZipBtn = document.getElementById('download-zip-btn');
         const inputFileTabs = document.getElementById('input-file-tabs');
         const outputFileTabs = document.getElementById('output-file-tabs');
-        const devTestLabel = document.getElementById('dev-test-label');
-        const devTestToggle = document.getElementById('dev-test-toggle');
-
-        const SAMPLE_TEST_HTML = `<!DOCTYPE html>\n<html>\n<head><title>Test</title></head>\n<body><h1>Patcher Test</h1></body>\n</html>`;
 
         const btnHowTo = document.getElementById('btn-how-to');
         const btnToggleMd = document.getElementById('btn-toggle-md');
@@ -965,8 +981,6 @@ function init() {
 
         const mdDock = document.getElementById('md-dock');
         const mdSlotsGrid = document.getElementById('md-slots-grid');
-        const btnAddMdSlot = document.getElementById('btn-add-md-slot');
-        const btnRemoveMdSlot = document.getElementById('btn-remove-md-slot');
         const btnCloseMdDock = document.getElementById('btn-close-md-dock');
 
         // --- Stateless Runtime Variables & Multi-File State ---
@@ -974,7 +988,7 @@ function init() {
         let activeFileIndex = 0;
         let isProcessing = false;
         let currentInstructions = "";
-        let failedPatchesMap = {};
+        let patchLocationsMap = {};
         let debounceTimer;
 
         // --- System Theme Initialization & Persistence ---
@@ -1032,7 +1046,7 @@ function init() {
         });
 
         async function loadFiles(fileList) {
-            const files = Array.from(fileList).slice(0, 10);
+            const files = Array.from(fileList).slice(0, 25);
             if (files.length === 0) return;
 
             inputPreview.classList.add('hidden');
@@ -1050,6 +1064,7 @@ function init() {
                         const ext = parts.length > 1 ? parts.pop().toLowerCase() : '';
                         resolve({
                             name: name,
+                            customName: '',
                             relativePath: relPath,
                             extension: ext,
                             content: content,
@@ -1098,13 +1113,14 @@ function init() {
                 return;
             }
 
-            const buildTabs = (container) => {
+            const buildTabs = (container, isOutput) => {
                 container.innerHTML = '';
                 filesState.forEach((f, idx) => {
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = `file-tab-btn ${idx === activeFileIndex ? 'active' : ''}`;
-                    btn.textContent = f.name;
+                    const displayName = (isOutput && f.customName) ? f.customName : f.name;
+                    btn.textContent = displayName;
                     btn.title = f.relativePath || f.name;
                     btn.addEventListener('click', () => {
                         activeFileIndex = idx;
@@ -1117,8 +1133,8 @@ function init() {
                 container.classList.remove('hidden');
             };
 
-            buildTabs(inputFileTabs);
-            buildTabs(outputFileTabs);
+            buildTabs(inputFileTabs, false);
+            buildTabs(outputFileTabs, true);
         }
 
         function renderActiveInputPreview() {
@@ -1141,11 +1157,28 @@ function init() {
             }, 200);
         }
 
-        // --- MD Viewer State & Handlers ---
+        // --- MD Viewer State & Handlers (Up to 5 Slots) ---
         let mdViewerSlots = [{ id: 1, name: '', content: '' }];
+
+        function syncMdSlotsCapacity() {
+            const hasEmpty = mdViewerSlots.some(s => !s.content);
+            if (!hasEmpty && mdViewerSlots.length < 5) {
+                mdViewerSlots.push({ id: mdViewerSlots.length + 1, name: '', content: '' });
+            }
+            while (mdViewerSlots.length > 1) {
+                const last = mdViewerSlots[mdViewerSlots.length - 1];
+                const prev = mdViewerSlots[mdViewerSlots.length - 2];
+                if (!last.content && !prev.content) {
+                    mdViewerSlots.pop();
+                } else {
+                    break;
+                }
+            }
+        }
 
         function renderMdSlots() {
             if (!mdSlotsGrid) return;
+            syncMdSlotsCapacity();
             mdSlotsGrid.innerHTML = '';
 
             mdViewerSlots.forEach((slot, index) => {
@@ -1161,8 +1194,11 @@ function init() {
                         <span class="md-slot-title" title="${titleText}">${titleText}</span>
                         <div class="md-slot-actions">
                             <input type="file" accept=".md,.markdown,.txt" class="hidden md-slot-file-input" data-index="${index}">
-                            <button type="button" class="btn-slot-upload" data-index="${index}">Upload</button>
-                            ${hasContent ? `<button type="button" class="btn-mini-clear md-slot-clear-btn" data-index="${index}" title="Clear slot"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>` : ''}
+                            ${hasContent 
+                                ? `<button type="button" class="btn-slot-replace" data-index="${index}">Replace</button>
+                                   <button type="button" class="btn-mini-clear md-slot-clear-btn" data-index="${index}" title="Clear slot"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`
+                                : `<button type="button" class="btn-slot-upload" data-index="${index}">Upload</button>`
+                            }
                         </div>
                     </div>
                     <div class="md-slot-body">
@@ -1193,7 +1229,7 @@ function init() {
                 mdSlotsGrid.appendChild(slotEl);
             });
 
-            mdSlotsGrid.querySelectorAll('.btn-slot-upload').forEach(btn => {
+            mdSlotsGrid.querySelectorAll('.btn-slot-upload, .btn-slot-replace').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const idx = e.currentTarget.dataset.index;
                     const input = mdSlotsGrid.querySelector(`.md-slot-file-input[data-index="${idx}"]`);
@@ -1220,11 +1256,10 @@ function init() {
             });
 
             if (btnToggleMd) {
+                const filledCount = mdViewerSlots.filter(s => s.content).length;
                 const labelSpan = btnToggleMd.querySelector('span');
-                if (labelSpan) labelSpan.textContent = `MD Viewer (${mdViewerSlots.length})`;
+                if (labelSpan) labelSpan.textContent = `MD Viewer (${filledCount || 1})`;
             }
-            if (btnAddMdSlot) btnAddMdSlot.disabled = mdViewerSlots.length >= 3;
-            if (btnRemoveMdSlot) btnRemoveMdSlot.disabled = mdViewerSlots.length <= 1;
         }
 
         function loadMdFileIntoSlot(file, slotIndex) {
@@ -1243,10 +1278,18 @@ function init() {
         if (btnToggleMd) {
             btnToggleMd.addEventListener('click', () => {
                 if (!mdDock) return;
-                const isHidden = mdDock.classList.toggle('hidden');
-                if (!isHidden) {
-                    renderMdSlots();
-                    mdDock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                const wasHidden = mdDock.classList.contains('hidden');
+                mdDock.classList.remove('hidden');
+                renderMdSlots();
+                mdDock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                if (wasHidden) {
+                    const targetIndex = mdViewerSlots.findIndex(s => !s.content);
+                    const triggerIndex = targetIndex !== -1 ? targetIndex : 0;
+                    setTimeout(() => {
+                        const targetInput = mdSlotsGrid.querySelector(`.md-slot-file-input[data-index="${triggerIndex}"]`);
+                        if (targetInput) targetInput.click();
+                    }, 150);
                 }
             });
         }
@@ -1254,24 +1297,6 @@ function init() {
         if (btnCloseMdDock) {
             btnCloseMdDock.addEventListener('click', () => {
                 if (mdDock) mdDock.classList.add('hidden');
-            });
-        }
-
-        if (btnAddMdSlot) {
-            btnAddMdSlot.addEventListener('click', () => {
-                if (mdViewerSlots.length < 3) {
-                    mdViewerSlots.push({ id: mdViewerSlots.length + 1, name: '', content: '' });
-                    renderMdSlots();
-                }
-            });
-        }
-
-        if (btnRemoveMdSlot) {
-            btnRemoveMdSlot.addEventListener('click', () => {
-                if (mdViewerSlots.length > 1) {
-                    mdViewerSlots.pop();
-                    renderMdSlots();
-                }
             });
         }
 
@@ -1366,7 +1391,8 @@ function init() {
             let offset = 0;
 
             for (const f of filesToZip) {
-                const filePath = (f.relativePath || f.name).replace(/^\.?\/+/, '');
+                const outputName = f.customName || f.relativePath || f.name;
+                const filePath = outputName.replace(/^\.?\/+/, '');
                 const nameBytes = encoder.encode(filePath);
                 const dataBytes = encoder.encode(f.patchedContent || f.content);
                 const checksum = calculateCrc32(dataBytes);
@@ -1431,14 +1457,27 @@ function init() {
 
         downloadBtn.addEventListener('click', () => {
             const active = filesState[activeFileIndex];
-            const content = active ? (active.patchedContent || active.content) : SAMPLE_TEST_HTML;
-            const fallback = active ? active.name : 'index.html';
+            const content = active ? (active.patchedContent || active.content) : "";
+            const fallback = active ? (active.customName || active.name) : 'index.html';
             const filename = outputFilenameInput.value.trim() || fallback;
+            if (active) active.customName = filename;
             executeDownload(filename, content);
+        });
+
+        outputFilenameInput.addEventListener('input', (e) => {
+            const active = filesState[activeFileIndex];
+            if (active) {
+                active.customName = e.target.value.trim();
+                renderFileTabs();
+            }
         });
 
         downloadZipBtn.addEventListener('click', () => {
             if (filesState.length === 0) return;
+            const active = filesState[activeFileIndex];
+            if (active && outputFilenameInput.value.trim()) {
+                active.customName = outputFilenameInput.value.trim();
+            }
             const zipBlob = createZipArchive(filesState);
             const url = URL.createObjectURL(zipBlob);
             const tempLink = document.createElement('a');
@@ -1463,27 +1502,6 @@ function init() {
             }
         });
 
-        devTestToggle.addEventListener('change', () => {
-            if (devTestToggle.checked) {
-                filesState = [{
-                    name: 'index.html',
-                    relativePath: 'index.html',
-                    extension: 'html',
-                    content: SAMPLE_TEST_HTML,
-                    patchedContent: SAMPLE_TEST_HTML
-                }];
-                activeFileIndex = 0;
-                outputFilenameInput.value = 'index.html';
-                downloadBtn.textContent = "Download sample file";
-                outputActionsContainer.classList.remove('hidden');
-                downloadZipBtn.classList.add('hidden');
-            } else {
-                outputActionsContainer.classList.add('hidden');
-                downloadBtn.textContent = "Download";
-                filesState = [];
-            }
-        });
-
         clearFileBtn.addEventListener('click', () => {
             filesState = [];
             activeFileIndex = 0;
@@ -1499,8 +1517,6 @@ function init() {
             outputSkeleton.textContent = "Awaiting Patch...";
             outputSkeleton.classList.remove('hidden');
             outputFilenameInput.value = "";
-            devTestToggle.checked = false;
-            devTestLabel.classList.remove('hidden');
             downloadBtn.textContent = "Download";
             downloadZipBtn.classList.add('hidden');
             renderFileTabs();
@@ -1515,8 +1531,6 @@ function init() {
             outputSkeleton.textContent = "Awaiting Patch...";
             outputSkeleton.classList.remove('hidden');
             outputFilenameInput.value = "";
-            devTestToggle.checked = false;
-            devTestLabel.classList.remove('hidden');
             downloadBtn.textContent = "Download";
             downloadZipBtn.classList.add('hidden');
             filesState.forEach(f => f.patchedContent = "");
@@ -1571,19 +1585,21 @@ function init() {
             }
         });
 
-        // --- Error Link Routing & Active Previews ---
+        // --- Trace Navigation & Active Previews ---
         statusList.addEventListener('click', (e) => {
-            const errorLink = e.target.closest('.error-link');
-            if (errorLink) {
+            const traceLink = e.target.closest('.trace-link');
+            if (traceLink) {
                 e.preventDefault();
-                const patchId = errorLink.getAttribute('data-patch');
-                const findString = failedPatchesMap[patchId];
-                if (findString && currentInstructions) {
-                    const start = currentInstructions.indexOf(findString);
+                const patchId = traceLink.getAttribute('data-patch');
+                const traceString = patchLocationsMap[patchId];
+                if (traceString && currentInstructions) {
+                    const start = currentInstructions.indexOf(traceString);
                     if (start !== -1) {
-                        const end = start + findString.length;
+                        const end = start + traceString.length;
                         instructionsInput.focus();
                         instructionsInput.setSelectionRange(start, end);
+                        const progress = start / currentInstructions.length;
+                        instructionsInput.scrollTop = progress * instructionsInput.scrollHeight;
                     }
                 }
             }
@@ -1593,7 +1609,7 @@ function init() {
             if (!filesState[activeFileIndex]) return;
             const active = filesState[activeFileIndex];
             const content = active.patchedContent || active.content || "";
-            outputFilenameInput.value = active.name || 'index.html';
+            outputFilenameInput.value = active.customName || active.name || 'index.html';
 
             if (!content) {
                 outputPreview.classList.add('hidden');
@@ -1665,7 +1681,7 @@ function init() {
         function processInstructions(instructions) {
             isProcessing = true;
             currentInstructions = instructions;
-            failedPatchesMap = {};
+            patchLocationsMap = {};
             
             engineSkeleton.classList.remove('hidden');
             statusList.innerHTML = `<div class="status-item text-gray"><div class="spinner"></div><span>Parsing AI instructions...</span></div>`;
@@ -1729,19 +1745,27 @@ function init() {
 
             statusList.innerHTML = '';
             engineSkeleton.classList.add('hidden');
-            failedPatchesMap = {};
+            patchLocationsMap = {};
 
             let totalPatchesFound = 0;
             let totalSuccess = 0;
 
             sections.forEach((sec, secIdx) => {
                 let targetFile = null;
+                let targetSource = sec.target;
+                let targetRename = '';
+
+                if (sec.target.includes('->')) {
+                    const parts = sec.target.split('->');
+                    targetSource = parts[0].trim();
+                    targetRename = parts[1].trim();
+                }
 
                 if (filesState.length > 0) {
                     if (headerMatches.length === 0) {
                         targetFile = filesState[activeFileIndex];
                     } else {
-                        const normTarget = sec.target.toLowerCase().replace(/^\.?\/+/, '');
+                        const normTarget = targetSource.toLowerCase().replace(/^\.?\/+/, '');
                         const baseTarget = normTarget.split(/[/\\]/).pop();
 
                         let matchIdx = filesState.findIndex(f => {
@@ -1785,7 +1809,9 @@ function init() {
                 if (filesState.length > 1 || headerMatches.length > 0) {
                     const groupEl = document.createElement('div');
                     groupEl.className = 'status-file-group';
-                    const displayName = targetFile ? (targetFile.relativePath || targetFile.name) : sec.target;
+                    const displayName = targetFile 
+                        ? (targetRename ? `${targetFile.relativePath || targetFile.name} → ${targetRename}` : (targetFile.relativePath || targetFile.name))
+                        : sec.target;
                     groupEl.innerHTML = `<div class="status-file-header"><span>${displayName}</span><span id="file-count-${secIdx}"></span></div>`;
                     statusList.appendChild(groupEl);
                     groupContainer = groupEl;
@@ -1801,33 +1827,34 @@ function init() {
 
                 filePatches.forEach((patch, pIdx) => {
                     const patchNum = pIdx + 1;
-                    const errKey = `${secIdx}_${patchNum}`;
+                    const traceKey = `${secIdx}_${patchNum}`;
 
                     if (patch.type === 'standard') {
+                        patchLocationsMap[traceKey] = patch.find;
                         if (workingContent.includes(patch.find)) {
                             workingContent = workingContent.replace(patch.find, patch.replace);
-                            groupContainer.innerHTML += `<div class="status-item text-green">${ICONS.check}<span>patch ${patchNum} applied (exact)</span></div>`;
+                            groupContainer.innerHTML += `<a href="#" class="trace-link status-item text-green" data-patch="${traceKey}" style="text-decoration:none;">${ICONS.check}<span>patch ${patchNum} applied (exact)</span></a>`;
                             fileSuccess++;
                             totalSuccess++;
                         } else {
-                            failedPatchesMap[errKey] = patch.find;
-                            groupContainer.innerHTML += `<a href="#" class="error-link status-item text-red" data-patch="${errKey}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchNum} not found (click to locate)</span></a>`;
+                            groupContainer.innerHTML += `<a href="#" class="trace-link status-item text-red" data-patch="${traceKey}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchNum} not found (click to locate)</span></a>`;
                         }
                     } else if (patch.type === 'range') {
                         const startIndex = workingContent.indexOf(patch.findStart);
                         if (startIndex === -1) {
-                            failedPatchesMap[errKey] = patch.findStart;
-                            groupContainer.innerHTML += `<a href="#" class="error-link status-item text-red" data-patch="${errKey}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchNum} start anchor not found (click to locate)</span></a>`;
+                            patchLocationsMap[traceKey] = patch.findStart;
+                            groupContainer.innerHTML += `<a href="#" class="trace-link status-item text-red" data-patch="${traceKey}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchNum} start anchor not found (click to locate)</span></a>`;
                         } else {
                             const searchAfter = startIndex + patch.findStart.length;
                             const endIndex = workingContent.indexOf(patch.findEnd, searchAfter);
                             if (endIndex === -1) {
-                                failedPatchesMap[errKey] = patch.findEnd;
-                                groupContainer.innerHTML += `<a href="#" class="error-link status-item text-red" data-patch="${errKey}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchNum} end anchor not found (click to locate)</span></a>`;
+                                patchLocationsMap[traceKey] = patch.findEnd;
+                                groupContainer.innerHTML += `<a href="#" class="trace-link status-item text-red" data-patch="${traceKey}" style="text-decoration:none;">${ICONS.alert}<span>patch ${patchNum} end anchor not found (click to locate)</span></a>`;
                             } else {
+                                patchLocationsMap[traceKey] = patch.findStart;
                                 const fullEnd = endIndex + patch.findEnd.length;
                                 workingContent = workingContent.slice(0, startIndex) + patch.replace + workingContent.slice(fullEnd);
-                                groupContainer.innerHTML += `<div class="status-item text-green">${ICONS.check}<span>patch ${patchNum} applied (range)</span></div>`;
+                                groupContainer.innerHTML += `<a href="#" class="trace-link status-item text-green" data-patch="${traceKey}" style="text-decoration:none;">${ICONS.check}<span>patch ${patchNum} applied (range)</span></a>`;
                                 fileSuccess++;
                                 totalSuccess++;
                             }
@@ -1836,6 +1863,9 @@ function init() {
                 });
 
                 targetFile.patchedContent = workingContent;
+                if (targetRename) {
+                    targetFile.customName = targetRename;
+                }
                 const countEl = document.getElementById(`file-count-${secIdx}`);
                 if (countEl) countEl.textContent = `${fileSuccess}/${filePatches.length}`;
             });
@@ -1847,9 +1877,8 @@ function init() {
             }
 
             if (totalSuccess > 0) {
+                renderFileTabs();
                 renderActiveOutputPreview();
-                devTestToggle.checked = false;
-                devTestLabel.classList.add('hidden');
                 downloadBtn.textContent = "Download";
                 outputActionsContainer.classList.remove('hidden');
 
