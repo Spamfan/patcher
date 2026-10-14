@@ -178,6 +178,34 @@
             transform: none;
         }
 
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: #ffffff;
+            border: 1px solid transparent;
+            padding: 0.55rem 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: var(--radius-pill);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: none;
+            width: auto;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            color: #ffffff;
+            transform: none;
+        }
+
+        [data-theme="dark"] .btn-primary {
+            color: #0b1d3a;
+        }
+
         .drag-over {
             border: 2px dashed var(--accent-color) !important;
             background-color: rgba(59, 89, 152, 0.05) !important;
@@ -496,6 +524,25 @@
             filter: brightness(0.95);
         }
 
+        [data-theme="dark"] .modal-chip-link {
+            background: var(--accent-color);
+            color: #0b1d3a;
+            font-weight: 700;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        [data-theme="dark"] .modal-chip-link:hover {
+            background: var(--accent-hover);
+        }
+
+        .md-dock-trigger-bar {
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
         pre.code-preview {
             background: var(--bg-main);
             border: 1px solid var(--border-color);
@@ -757,7 +804,7 @@
     <header>
         <div class="header-controls">
             <div class="header-title-group">
-                <h1>Patcher <span class="version-badge">v0.2.6</span></h1>
+                <h1>Patcher <span class="version-badge">v0.2.7</span></h1>
                 <nav class="header-nav">
                     <a href="https://spamfan.github.io/navigator" class="header-nav-link">navigator</a>
                 </nav>
@@ -769,11 +816,7 @@
             </div>
         </div>
         <div class="top-actions">
-            <button id="btn-toggle-md" class="btn-secondary">
-                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-                <span>MD Viewer (1)</span>
-            </button>
-            <button id="btn-how-to" class="btn-secondary">
+            <button id="btn-how-to" class="btn-primary">
                 <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.93 2.99z"/></svg>
                 How to use
             </button>
@@ -842,6 +885,14 @@
         </div>
     </main>
 
+    <div class="md-dock-trigger-bar">
+        <button id="btn-toggle-md" class="btn-secondary">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            <span id="md-toggle-text">MD Viewer</span>
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+        </button>
+    </div>
+
     <!-- MD Viewer Multi-Panel Dock -->
     <section class="md-dock hidden" id="md-dock">
         <div class="md-dock-header">
@@ -850,8 +901,8 @@
                 Markdown Viewer
             </h2>
             <div class="md-dock-controls">
-                <button type="button" id="btn-close-md-dock" class="btn-mini-clear" title="Close MD Viewer" aria-label="Close MD Viewer">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                <button type="button" id="btn-minimize-md-dock" class="btn-mini-clear" title="Minimize MD Viewer" aria-label="Minimize MD Viewer">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
                 </button>
             </div>
         </div>
@@ -981,7 +1032,8 @@ function init() {
 
         const mdDock = document.getElementById('md-dock');
         const mdSlotsGrid = document.getElementById('md-slots-grid');
-        const btnCloseMdDock = document.getElementById('btn-close-md-dock');
+        const btnMinimizeMdDock = document.getElementById('btn-minimize-md-dock');
+        const mdToggleText = document.getElementById('md-toggle-text');
 
         // --- Stateless Runtime Variables & Multi-File State ---
         let filesState = [];
@@ -1257,8 +1309,9 @@ function init() {
 
             if (btnToggleMd) {
                 const filledCount = mdViewerSlots.filter(s => s.content).length;
-                const labelSpan = btnToggleMd.querySelector('span');
-                if (labelSpan) labelSpan.textContent = `MD Viewer (${filledCount || 1})`;
+                if (mdToggleText) {
+                    mdToggleText.textContent = filledCount > 0 ? `MD Viewer (${filledCount})` : 'MD Viewer';
+                }
             }
         }
 
@@ -1279,23 +1332,25 @@ function init() {
             btnToggleMd.addEventListener('click', () => {
                 if (!mdDock) return;
                 const wasHidden = mdDock.classList.contains('hidden');
-                mdDock.classList.remove('hidden');
-                renderMdSlots();
-                mdDock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
                 if (wasHidden) {
+                    mdDock.classList.remove('hidden');
+                    renderMdSlots();
+                    mdDock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
                     const targetIndex = mdViewerSlots.findIndex(s => !s.content);
                     const triggerIndex = targetIndex !== -1 ? targetIndex : 0;
                     setTimeout(() => {
                         const targetInput = mdSlotsGrid.querySelector(`.md-slot-file-input[data-index="${triggerIndex}"]`);
                         if (targetInput) targetInput.click();
                     }, 150);
+                } else {
+                    mdDock.classList.add('hidden');
                 }
             });
         }
 
-        if (btnCloseMdDock) {
-            btnCloseMdDock.addEventListener('click', () => {
+        if (btnMinimizeMdDock) {
+            btnMinimizeMdDock.addEventListener('click', () => {
                 if (mdDock) mdDock.classList.add('hidden');
             });
         }
@@ -1541,44 +1596,28 @@ function init() {
             const originalHTML = btnDownloadLdd.innerHTML;
             btnDownloadLdd.innerHTML = '<div class="spinner" style="width: 0.9rem; height: 0.9rem; border-width: 2px;"></div> Fetching...';
             btnDownloadLdd.disabled = true;
-            
+
             try {
-                const res = await fetch('https://api.github.com/repos/spamfan/patcher/contents/');
-                if (!res.ok) throw new Error('Failed to fetch repo contents');
-                const data = await res.json();
-                
-                const lddFiles = data.filter(f => f.name.toLowerCase().startsWith('ldd') && f.name.toLowerCase().endsWith('.md'));
-                if (lddFiles.length === 0) throw new Error('No LDD files found');
-                
-                let highestNum = -1;
-                let targetFile = null;
-                
-                lddFiles.forEach(f => {
-                    const match = f.name.match(/ldd(\d*)\.md/i);
-                    if (match) {
-                        const num = match[1] ? parseInt(match[1]) : 0;
-                        if (num > highestNum) {
-                            highestNum = num;
-                            targetFile = f;
-                        }
-                    }
-                });
-                
-                if (!targetFile) throw new Error('Could not parse LDD versions');
-                
-                const fileRes = await fetch(targetFile.download_url);
+                let downloadUrl = 'https://raw.githubusercontent.com/spamfan/patcher/main/md-project-template.md';
+                const apiRes = await fetch('https://api.github.com/repos/spamfan/patcher/contents/md-project-template.md');
+                if (apiRes.ok) {
+                    const data = await apiRes.json();
+                    if (data.download_url) downloadUrl = data.download_url;
+                }
+
+                const fileRes = await fetch(downloadUrl);
+                if (!fileRes.ok) throw new Error('Failed to fetch template');
                 const fileBlob = await fileRes.blob();
                 const url = window.URL.createObjectURL(fileBlob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = targetFile.name;
+                a.download = 'md-project-template.md';
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
-                
             } catch (err) {
-                alert('Error fetching LDD: ' + err.message);
+                alert('Error fetching template: ' + err.message);
             } finally {
                 btnDownloadLdd.innerHTML = originalHTML;
                 btnDownloadLdd.disabled = false;

@@ -1,6 +1,6 @@
 # [PROJECT NAME]
 ### [Project Codename / Subtitle]
-### Living Design Document (LDD) Template
+### Living Design Document (LDD) Template V0.1.1
 
 ---
 
@@ -226,12 +226,12 @@ Replace with
 ### 6. BASELINE FLOOR & FILE TREE
 
 #### Version Floor
-* **App ([PROJECT_NAME]):** `v0.1.0`  
-* **`index.html`:** `v0.1.0`  
-* **`[main-entry].js`:** `v0.1.0`  
-* **`[submodule-a].js`:** `v0.1.0`  
-* **`[submodule-b].js`:** `v0.1.0`  
-* **`styles.css`:** `v0.1.0`  
+* **App ([PROJECT_NAME]):** `v0.1.1`  
+* **`index.html`:** `v0.1.1`  
+* **`[main-entry].js`:** `v0.1.1`  
+* **`[submodule-a].js`:** `v0.1.1`  
+* **`[submodule-b].js`:** `v0.1.1`  
+* **`styles.css`:** `v0.1.1`  
 
 #### File Tree
 * `assets/`

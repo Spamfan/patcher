@@ -1,6 +1,6 @@
 # PATCHER
 ### Browser-Based AI Code Patcher & Diff Engine
-### Living Design Document (LDD) V5
+### Living Design Document (LDD) V6
 
 ---
 
@@ -200,12 +200,11 @@ Replace with
   * **Module 1 (Input):** Multi-file intake supporting up to 25 files via drag-and-drop or system file picker. Includes responsive touch/scroll snap carousel tabs with strict horizontal overflow containment (`min-width: 0`), and live sandboxed iframe previews.
   * **Module 2 (Engine):** Direct textarea `#instructions-input` with auto-clipboard ingestion, debounced parsing, and dual-mode regex evaluation: Standard (`Find`) and Range (`Find start` + `Find end`). Features dynamic file renaming (`old -> new`) and bi-directional click-to-trace line navigation for both applied and missing patches.
   * **Module 3 (Output):** Smart patched output rendering, responsive tab switching, editable filename synchronization, single-file downloads, clipboard copying, and PKZip archive generation respecting renamed filenames.
-* **MD Viewer Multi-Panel Dock:** Expandable reference dock with up to 5 dynamic file slots rendering markdown via CDN Marked.js (`marked.parse()`). Offers auto-appending next-slot readiness, secondary "Replace" button switching, and direct header toggle triggering immediate native file picking.
+* **MD Viewer Multi-Panel Dock:** Expandable reference dock with up to 5 dynamic file slots rendering markdown via CDN Marked.js (`marked.parse()`). Offers auto-appending next-slot readiness, secondary "Replace" button switching, and direct trigger from the dedicated below-card toggle bar (`.md-dock-trigger-bar`). Supports chevron-based minimize/expand behavior (down chevron on trigger button, up chevron on dock minimize button) and omits slot count badges when 0 markdown files are loaded.
 * **PKZip Generation Engine:** Embedded pure vanilla ZIP builder (`CRC_TABLE`, `calculateCrc32()`, local and central directory headers). No external libraries (e.g. JSZip) allowed.
 * **GitHub LDD Fetcher & Template Conventions:**
-  * Queries GitHub API (`/repos/spamfan/patcher/contents/`) for downloadable LDD rulebooks.
-  * The engine regex evaluates `/ldd(\d*)\.md/i`.
-  * Public template files uploaded to root must strictly match `ldd{N}.md` (e.g., `ldd6.md`).
+  * Queries GitHub for downloadable LDD rulebook targeting `md-project-template.md` directly.
+  * Public template files uploaded to root must strictly match `md-project-template.md`.
 * **EOF Whitespace Safety:** Avoid anchoring against raw trailing EOF lines (e.g. `</html>`) due to platform line-break discrepancies (`\r\n` vs `\n`).
 
 ---
@@ -213,13 +212,14 @@ Replace with
 ### 6. BASELINE FLOOR & FILE TREE
 
 #### Version Floor
-* **App (Patcher):** `v0.2.6`  
-* **`index.html`:** `v0.2.6`  
-* **`md-project.md`:** `V5`  
+* **App (Patcher):** `v0.2.7`  
+* **`index.html`:** `v0.2.7`  
+* **`md-project-template.md`:** `v0.1.1`  
+* **`md-project.md`:** `V6`  
 
 #### File Tree
 * `index.html`
-* `ldd6.md`
+* `md-project-template.md`
 * `md-project.md`
 
 ---
