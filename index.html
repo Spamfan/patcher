@@ -804,7 +804,7 @@
     <header>
         <div class="header-controls">
             <div class="header-title-group">
-                <h1>Patcher <span class="version-badge">v0.2.7</span></h1>
+                <h1>Patcher <span class="version-badge">v0.2.8</span></h1>
                 <nav class="header-nav">
                     <a href="https://spamfan.github.io/navigator" class="header-nav-link">navigator</a>
                 </nav>
@@ -966,21 +966,22 @@ function init() {
                         <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
                         Download latest LDD template
                     </button>
-                    <a href="https://spamfan.github.io/mdviewer" target="_blank" rel="noopener noreferrer" class="modal-chip-link" style="background: var(--border-color); color: var(--text-main);">
-                        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-                        Open MDViewer
-                    </a>
                 </div>
             </div>
 
             <div class="modal-section">
                 <h3>4. Recommended AI Setup (AI Studio)</h3>
-                <ul style="margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem;">
-                    <li><strong>Model:</strong> Gemini 3.8 Flash</li>
-                    <li><strong>Thinking Level:</strong> High</li>
-                    <li><strong>Grounding:</strong> Google Search (On), URL context (On), Google Maps (Off unless needed)</li>
-                    <li><strong>Defaults:</strong> Temperature, top-p, and output limits default.</li>
-                    <li><strong>Context Management:</strong> Branch off and delete irrelevant conversation chunks when context reaches ~100k tokens.</li>
+                <ul style="margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; color: var(--text-muted);">
+                    <li>
+                        <strong style="color: var(--text-main);">Use Gemini 3.8 flash via AI studio and its default settings</strong>
+                        <ul style="margin: 0.35rem 0 0 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                            <li><strong style="color: var(--text-main);">Thinking Level:</strong> Medium</li>
+                            <li><strong style="color: var(--text-main);">Grounding:</strong> Keep URL context and Grounding with Google Search both OFF. Only enable Grounding with Google Maps on for relevant projects.</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong style="color: var(--text-main);">Context Management:</strong> Re-Branch backwards, delete irrelevant conversation pieces, and/or move to an entirely new chat session whenever context reaches ~50k-100k tokens.
+                    </li>
                 </ul>
             </div>
         </div>

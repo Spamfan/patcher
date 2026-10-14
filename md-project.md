@@ -1,6 +1,6 @@
 # PATCHER
 ### Browser-Based AI Code Patcher & Diff Engine
-### Living Design Document (LDD) V6
+### Living Design Document (LDD) V7
 
 ---
 
@@ -212,10 +212,10 @@ Replace with
 ### 6. BASELINE FLOOR & FILE TREE
 
 #### Version Floor
-* **App (Patcher):** `v0.2.7`  
-* **`index.html`:** `v0.2.7`  
+* **App (Patcher):** `v0.2.8`  
+* **`index.html`:** `v0.2.8`  
 * **`md-project-template.md`:** `v0.1.1`  
-* **`md-project.md`:** `V6`  
+* **`md-project.md`:** `V7`  
 
 #### File Tree
 * `index.html`
