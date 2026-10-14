@@ -43,7 +43,7 @@
             --warning-color: #ffb4ab;
         }
 
-        [data-theme="dark"] button:not(.btn-secondary):not(.btn-icon):not(#copy-output-btn):not(.file-tab-btn) {
+        [data-theme="dark"] button:not(.btn-secondary):not(.btn-icon):not(#copy-output-btn):not(.file-tab-btn):not(.btn-slot-replace) {
             color: #0b1d3a;
         }
 
@@ -804,7 +804,7 @@
     <header>
         <div class="header-controls">
             <div class="header-title-group">
-                <h1>Patcher <span class="version-badge">v0.2.8</span></h1>
+                <h1>Patcher <span class="version-badge">v0.2.9</span></h1>
                 <nav class="header-nav">
                     <a href="https://spamfan.github.io/navigator" class="header-nav-link">navigator</a>
                 </nav>
@@ -1599,14 +1599,20 @@ function init() {
             btnDownloadLdd.disabled = true;
 
             try {
-                let downloadUrl = 'https://raw.githubusercontent.com/spamfan/patcher/main/md-project-template.md';
-                const apiRes = await fetch('https://api.github.com/repos/spamfan/patcher/contents/md-project-template.md');
+                const timestamp = Date.now();
+                let downloadUrl = `https://raw.githubusercontent.com/spamfan/patcher/main/md-project-template.md?t=${timestamp}`;
+                const apiRes = await fetch(`https://api.github.com/repos/spamfan/patcher/contents/md-project-template.md?t=${timestamp}`, {
+                    cache: 'no-store'
+                });
                 if (apiRes.ok) {
                     const data = await apiRes.json();
-                    if (data.download_url) downloadUrl = data.download_url;
+                    if (data.download_url) {
+                        const separator = data.download_url.includes('?') ? '&' : '?';
+                        downloadUrl = `${data.download_url}${separator}t=${timestamp}`;
+                    }
                 }
 
-                const fileRes = await fetch(downloadUrl);
+                const fileRes = await fetch(downloadUrl, { cache: 'no-store' });
                 if (!fileRes.ok) throw new Error('Failed to fetch template');
                 const fileBlob = await fileRes.blob();
                 const url = window.URL.createObjectURL(fileBlob);

@@ -1,6 +1,6 @@
 # PATCHER
 ### Browser-Based AI Code Patcher & Diff Engine
-### Living Design Document (LDD) V7
+### Living Design Document (LDD) V8
 
 ---
 
@@ -203,7 +203,7 @@ Replace with
 * **MD Viewer Multi-Panel Dock:** Expandable reference dock with up to 5 dynamic file slots rendering markdown via CDN Marked.js (`marked.parse()`). Offers auto-appending next-slot readiness, secondary "Replace" button switching, and direct trigger from the dedicated below-card toggle bar (`.md-dock-trigger-bar`). Supports chevron-based minimize/expand behavior (down chevron on trigger button, up chevron on dock minimize button) and omits slot count badges when 0 markdown files are loaded.
 * **PKZip Generation Engine:** Embedded pure vanilla ZIP builder (`CRC_TABLE`, `calculateCrc32()`, local and central directory headers). No external libraries (e.g. JSZip) allowed.
 * **GitHub LDD Fetcher & Template Conventions:**
-  * Queries GitHub for downloadable LDD rulebook targeting `md-project-template.md` directly.
+  * Queries GitHub for downloadable LDD rulebook targeting `md-project-template.md` directly using epoch timestamp query parameters and `cache: 'no-store'` to prevent stale downloads.
   * Public template files uploaded to root must strictly match `md-project-template.md`.
 * **EOF Whitespace Safety:** Avoid anchoring against raw trailing EOF lines (e.g. `</html>`) due to platform line-break discrepancies (`\r\n` vs `\n`).
 
@@ -212,10 +212,10 @@ Replace with
 ### 6. BASELINE FLOOR & FILE TREE
 
 #### Version Floor
-* **App (Patcher):** `v0.2.8`  
-* **`index.html`:** `v0.2.8`  
+* **App (Patcher):** `v0.2.9`  
+* **`index.html`:** `v0.2.9`  
 * **`md-project-template.md`:** `v0.1.1`  
-* **`md-project.md`:** `V7`  
+* **`md-project.md`:** `V8`  
 
 #### File Tree
 * `index.html`
